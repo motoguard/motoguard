@@ -1268,9 +1268,11 @@ const Store={
   },
   async setUserData(d){
     const uid=currentUser?.uid||'demo';
-    if(isFirebaseMode)return fbDb.ref('users/'+uid).update(d);
+    // Strip undefined values — Firebase .update() rejects them and silently fails
+    const clean=JSON.parse(JSON.stringify(d));
+    if(isFirebaseMode)return fbDb.ref('users/'+uid).update(clean);
     const cur=await this.getUserData();
-    localStorage.setItem('mg:user:'+uid,JSON.stringify({...cur,...d}));
+    localStorage.setItem('mg:user:'+uid,JSON.stringify({...cur,...clean}));
   },
   listenReports(cb){
     if(unsubReports){try{unsubReports()}catch{}}
@@ -1475,7 +1477,7 @@ async function loadData(){
   userPoints=ud.points??99;
   completedMissions=ud.missions||{};
   bestScore=ud.bestScore||0;
-  redeemed=ud.redeemed||[];
+  redeemed=Array.isArray(ud.redeemed)?ud.redeemed:(ud.redeemed?Object.values(ud.redeemed):[]);
   updateAllDisplays();
 }
 
@@ -2546,35 +2548,42 @@ async function redeemReward(id){
   const r=REWARDS.find(x=>x.id===id);if(!r)return;
   if(userPoints<r.cost){showToast(`ต้องการอีก ${r.cost-userPoints} แต้ม`,'error');return}
   if(!confirm(`แลก "${r.name}"?\nใช้ ${r.cost} Moto Points`))return;
-  userPoints-=r.cost;
   const code='MOTO'+Date.now().toString(36).toUpperCase().slice(-6);
   const exp=new Date(Date.now()+30*24*60*60*1000).toISOString().split('T')[0];
-  const isFree=r.discount===100;
   const isPercent=r.discount<100&&r.cat==='food';
   const coupon={
     id:'rd_'+Date.now(),
     rewardId:id,
-    partnerName:r.partnerName,
-    discount:r.discount,
-    freeText:r.freeText,
-    percentDiscount:isPercent,
-    code,date:new Date().toISOString().split('T')[0],
+    partnerName:r.partnerName||r.name||'รางวัล',
+    discount:r.discount||0,
+    freeText:r.freeText||'',
+    percentDiscount:!!isPercent,
+    code,
+    date:new Date().toISOString().split('T')[0],
     expire:exp,
   };
+  // Deduct + record FIRST, update the UI immediately so it never looks stuck
+  userPoints-=r.cost;
   redeemed.push(coupon);
-  await saveUser();
-  // Show coupon modal
+  updateAllDisplays();
+  renderRewards();
+  // Show the coupon modal right away (don't wait on the network)
   document.getElementById('coupon-display').innerHTML=`
     <div class="coupon-card" style="margin:0;">
-      <div class="coupon-name">🎉 ${r.partnerName}</div>
-      <div class="coupon-discount">${r.freeText||('ลด '+r.discount+(isPercent?'%':' บาท'))}</div>
+      <div class="coupon-name">🎉 ${escapeHtml(coupon.partnerName)}</div>
+      <div class="coupon-discount">${escapeHtml(coupon.freeText||('ลด '+coupon.discount+(isPercent?'%':' บาท')))}</div>
       <div class="coupon-code">CODE: ${code}</div>
       <div class="coupon-expire">หมดอายุ: ${exp}</div>
     </div>
   `;
   document.getElementById('coupon-modal').classList.add('show');
-  updateAllDisplays();
-  renderRewards();
+  // Persist in the background; if it fails, tell the user but keep the coupon visible
+  try{
+    await saveUser();
+  }catch(e){
+    console.error('saveUser after redeem failed',e);
+    showToast('⚠️ บันทึกขึ้นส่วนกลางไม่สำเร็จ แต่คูปองใช้ได้ในเครื่องนี้','warn');
+  }
 }
 function closeCouponModal(){document.getElementById('coupon-modal').classList.remove('show')}
 
