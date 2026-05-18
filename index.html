@@ -2511,6 +2511,8 @@ let activeRewardCat='all';
 function filterRewards(c){activeRewardCat=c;document.querySelectorAll('.rewards-tab').forEach(t=>t.classList.toggle('active',t.dataset.cat===c));renderRewards()}
 function renderRewards(){
   const list=document.getElementById('rewards-list');if(!list)return;
+  // Keep the points counters in sync everywhere
+  document.querySelectorAll('#hero-points,#rewards-points,#profile-points').forEach(el=>el.textContent=userPoints);
   // My coupons
   const myC=document.getElementById('my-coupons');
   if(redeemed.length>0){
@@ -2571,6 +2573,7 @@ async function redeemReward(id){
     </div>
   `;
   document.getElementById('coupon-modal').classList.add('show');
+  updateAllDisplays();
   renderRewards();
 }
 function closeCouponModal(){document.getElementById('coupon-modal').classList.remove('show')}
