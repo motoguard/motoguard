@@ -1,0 +1,2806 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MotoGuard · ขับขี่ปลอดภัย</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+<style>
+:root{
+  --navy:#0a2e5c;--navy-deep:#061d3d;--navy-light:#1e4a82;
+  --gold:#fbbf24;--gold-deep:#d97706;
+  --red:#dc2626;--green:#16a34a;--teal:#0d9488;
+  --bg:#f0f3f8;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{font-family:'Prompt',system-ui,sans-serif;background:linear-gradient(135deg,#cbd5e1 0%,#94a3b8 100%);min-height:100vh;color:var(--text);-webkit-font-smoothing:antialiased;height:100vh;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center}
+.app-frame{width:100%;max-width:420px;height:100vh;max-height:920px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 30px 80px rgba(0,0,0,0.3)}
+@media(min-width:500px){body{padding:16px}.app-frame{border-radius:36px;box-shadow:0 30px 80px rgba(0,0,0,0.3),0 0 0 8px #1a1a1a;height:92vh;min-height:720px}}
+
+/* Header */
+.app-header{background:linear-gradient(135deg,var(--navy-deep) 0%,var(--navy) 60%,var(--navy-light) 100%);color:#fff;padding:16px 18px 12px;flex-shrink:0;position:relative;z-index:20}
+.header-top{display:flex;align-items:center;justify-content:space-between}
+.header-logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--gold),var(--gold-deep));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 14px rgba(251,191,36,0.4)}
+.header-logo h1{font-size:20px;font-weight:800;letter-spacing:0.3px}
+.header-logo .subtitle{font-size:10.5px;color:var(--gold);font-weight:500}
+.server-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);padding:5px 10px;border-radius:14px;font-size:10.5px;font-weight:500;backdrop-filter:blur(8px);cursor:pointer}
+.server-dot{width:7px;height:7px;background:#4ade80;border-radius:50%;box-shadow:0 0 8px #4ade80;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(0.85)}}
+
+/* Pages */
+.page{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 14px 100px;display:none;-webkit-overflow-scrolling:touch}
+.page.active{display:block;animation:fadeIn 0.25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.page::-webkit-scrollbar{width:4px}
+.page::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
+
+.card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 4px 12px rgba(0,0,0,0.04)}
+
+/* Hero */
+.hero-card{background:linear-gradient(135deg,#0a2e5c 0%,#1e4a82 100%);border-radius:20px;padding:16px;margin-bottom:14px;color:#fff;position:relative;overflow:hidden}
+.hero-card::before{content:'';position:absolute;top:-50%;right:-30%;width:200px;height:200px;background:radial-gradient(circle,rgba(251,191,36,0.25) 0%,transparent 70%);border-radius:50%}
+.hero-greeting{font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:2px;position:relative}
+.hero-name{font-size:18px;font-weight:700;margin-bottom:12px;position:relative}
+.hero-stats{display:flex;gap:16px;position:relative}
+.hero-stat{flex:1}
+.hero-stat-value{font-size:22px;font-weight:800;font-family:'Bebas Neue',sans-serif;letter-spacing:0.5px;line-height:1}
+.hero-stat-value.gold{color:var(--gold)}
+.hero-stat-label{font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.quick-action{background:#fff;border-radius:14px;padding:14px;cursor:pointer;transition:transform 0.15s;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.quick-action:active{transform:scale(0.97)}
+.qa-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:8px}
+.quick-action.games .qa-icon{background:linear-gradient(135deg,#fef3c7,#fbbf24)}
+.quick-action.guide .qa-icon{background:linear-gradient(135deg,#fecaca,#f87171)}
+.quick-action.rewards .qa-icon{background:linear-gradient(135deg,#fde68a,#f59e0b)}
+.quick-action.dashboard .qa-icon{background:linear-gradient(135deg,#ddd6fe,#8b5cf6)}
+.qa-title{font-size:13px;font-weight:700;color:var(--text)}
+.qa-desc{font-size:10.5px;color:var(--muted);margin-top:1px}
+
+/* Map */
+.map-card{padding:14px}
+.map-card h2{font-size:14px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:2px}
+.map-card .subt{font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px}
+#heatmap{height:300px;border-radius:14px;overflow:hidden;position:relative;background:#cce4f0}
+.map-legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);font-weight:500}
+.legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+/* Notif */
+.notif-item{padding:10px 0;border-bottom:1px solid #f1f5f9}
+.notif-item:last-child{border-bottom:none;padding-bottom:0}
+.notif-item:first-child{padding-top:0}
+.notif-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.notif-body{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* Games */
+.games-hero{background:linear-gradient(135deg,#fbbf24 0%,#f59e0b 100%);border-radius:20px;padding:18px;margin-bottom:14px;color:#fff;text-align:center;position:relative;overflow:hidden}
+.games-hero h2{font-size:26px;font-weight:900;letter-spacing:0.5px;margin-bottom:4px;font-family:'Bebas Neue',sans-serif}
+.games-hero p{font-size:12px;line-height:1.5;opacity:0.95}
+
+.game-card{background:#fff;border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,0.06);cursor:pointer;transition:transform 0.15s;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
+.game-card:active{transform:scale(0.98)}
+.game-card-icon{width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:32px;color:#fff}
+.game-card.brake .game-card-icon{background:linear-gradient(135deg,#f87171,#dc2626)}
+.game-card.league .game-card-icon{background:linear-gradient(135deg,#2dd4bf,#0d9488)}
+.game-card-text{flex:1}
+.game-card-title{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;letter-spacing:-0.3px}
+.game-card-desc{font-size:11.5px;color:var(--muted);line-height:1.45}
+.game-card-arrow{font-size:22px;color:var(--navy);font-weight:300}
+
+/* Brake game canvas */
+.game-page{position:absolute;inset:0;background:#1a1a1a;z-index:1000;display:none;flex-direction:column}
+.game-page.active{display:flex}
+.game-header{background:linear-gradient(135deg,var(--navy-deep),var(--navy));color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:5}
+.game-header .gh-back{background:rgba(255,255,255,0.15);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600}
+.game-stats{display:flex;gap:14px}
+.game-stat{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:0.5px}
+.game-stat .icon{font-size:16px}
+.game-stat.score{color:var(--gold)}
+
+.game-canvas{flex:1;position:relative;overflow:hidden;background:#383838;user-select:none;-webkit-user-select:none;touch-action:none}
+.road-edge-left,.road-edge-right{position:absolute;top:0;bottom:0;width:5px;background:#fff}
+.road-edge-left{left:8%}.road-edge-right{right:8%}
+.lane-divider-anim{position:absolute;top:0;bottom:0;left:50%;width:5px;margin-left:-2.5px;background-image:repeating-linear-gradient(0deg,#fff 0 30px,transparent 30px 60px);background-size:100% 60px;animation:scrollRoad 0.6s linear infinite}
+@keyframes scrollRoad{from{background-position:0 0}to{background-position:0 60px}}
+
+.motorcycle{position:absolute;bottom:90px;left:50%;width:50px;height:78px;margin-left:-25px;z-index:10;transition:transform 0.25s cubic-bezier(0.4,0,0.2,1);filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5))}
+.motorcycle.lane-left{transform:translateX(-65px)}
+.motorcycle.lane-right{transform:translateX(65px)}
+.motorcycle.braking{filter:drop-shadow(0 0 14px rgba(255,80,80,0.9)) drop-shadow(0 4px 6px rgba(0,0,0,0.5))}
+.motorcycle.hit{animation:shake 0.4s}
+@keyframes shake{0%,100%{filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5))}25%{filter:drop-shadow(0 0 14px #ef4444)}50%{filter:drop-shadow(0 0 14px #ef4444) brightness(1.5)}75%{filter:drop-shadow(0 0 14px #ef4444)}}
+
+.obstacle{position:absolute;z-index:5;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4))}
+.obstacle.car{width:48px;height:78px}
+.obstacle.pothole{width:64px;height:30px;background:radial-gradient(ellipse,#0a0a0a 30%,#1a1a1a 60%,transparent);border-radius:50%}
+.obstacle.pedestrian{width:42px;height:42px;font-size:38px;text-align:center;line-height:42px}
+.obstacle.slippery{width:84%;height:60px;left:8%;right:8%;background:linear-gradient(180deg,rgba(96,165,250,0.7),rgba(59,130,246,0.4));display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.6);border-top:2px solid rgba(255,255,255,0.5);border-bottom:2px solid rgba(255,255,255,0.5)}
+.obstacle.traffic-light{width:84%;left:8%;right:8%;height:auto;background:transparent;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.obstacle.traffic-light .stop-line{width:100%;height:14px;background:#facc15;border-top:3px solid #fff;border-bottom:3px solid #fff;display:flex;align-items:center;justify-content:center}
+.obstacle.traffic-light.red .badge{background:#dc2626;color:#fff}
+.obstacle.traffic-light.green .badge{background:#16a34a;color:#fff}
+.obstacle.traffic-light .badge{position:absolute;top:-22px;padding:3px 12px;border-radius:6px;font-size:11px;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,0.4)}
+
+.game-controls{position:absolute;bottom:16px;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-end;padding:0 14px;z-index:20;pointer-events:none}
+.game-controls>*{pointer-events:auto}
+.lane-btn{width:62px;height:62px;background:rgba(15,23,42,0.7);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,0.3);border-radius:50%;color:var(--gold);font-size:30px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:transform 0.1s;user-select:none}
+.lane-btn:active{transform:scale(0.9);background:rgba(251,191,36,0.3)}
+.brake-btn{width:80px;height:80px;background:linear-gradient(180deg,#f87171,#dc2626);border:3px solid #fff;border-radius:50%;color:#fff;font-size:14px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:inherit;box-shadow:0 4px 14px rgba(220,38,38,0.6);transition:transform 0.1s;letter-spacing:0.5px;user-select:none}
+.brake-btn:active,.brake-btn.pressed{transform:scale(0.92);background:linear-gradient(180deg,#dc2626,#991b1b)}
+.brake-btn .icon{font-size:24px;line-height:1}
+.brake-btn .label{font-size:11px;margin-top:2px}
+
+.game-toast{position:absolute;top:80px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.9);color:#fff;padding:8px 16px;border-radius:14px;font-size:13px;font-weight:600;z-index:30;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.15);opacity:0;pointer-events:none;transition:opacity 0.3s,top 0.3s}
+.game-toast.show{opacity:1;top:100px}
+.game-toast.success{background:rgba(22,163,74,0.95)}
+.game-toast.error{background:rgba(220,38,38,0.95)}
+
+.score-popup{position:absolute;font-size:20px;font-weight:800;color:var(--gold);pointer-events:none;z-index:30;animation:scorePopup 1s ease-out forwards;text-shadow:0 0 12px rgba(251,191,36,0.6);font-family:'Bebas Neue',sans-serif;letter-spacing:0.5px}
+@keyframes scorePopup{0%{opacity:0;transform:translateY(0) scale(0.8)}20%{opacity:1;transform:translateY(-10px) scale(1.2)}100%{opacity:0;transform:translateY(-50px) scale(1)}}
+
+.game-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.85);z-index:50;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
+.game-overlay.show{display:flex}
+.game-over-card{background:#fff;border-radius:22px;padding:24px 20px;width:100%;max-width:340px;text-align:center}
+.go-icon{font-size:56px;margin-bottom:8px;line-height:1}
+.go-title{font-size:24px;font-weight:900;color:var(--navy);margin-bottom:4px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+.go-subtitle{font-size:12px;color:var(--muted);margin-bottom:16px}
+.go-stats{display:flex;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:16px;gap:4px}
+.go-stat{flex:1}
+.go-stat-value{font-size:24px;font-weight:800;color:var(--navy);font-family:'Bebas Neue',sans-serif;letter-spacing:0.5px}
+.go-stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+.go-buttons{display:flex;gap:8px}
+.go-btn{flex:1;padding:12px;border-radius:12px;font-family:inherit;font-size:13px;font-weight:700;border:none;cursor:pointer}
+.go-btn.primary{background:var(--navy);color:#fff}
+.go-btn.secondary{background:var(--bg);color:var(--text)}
+
+.game-pre-start{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);z-index:50;backdrop-filter:blur(4px);text-align:center;padding:20px}
+.gps-title{font-size:38px;font-weight:900;color:var(--gold);font-family:'Bebas Neue',sans-serif;letter-spacing:2px;margin-bottom:8px;text-shadow:0 4px 24px rgba(0,0,0,0.5)}
+.gps-desc{font-size:13px;color:#fff;margin-bottom:18px;line-height:1.5;max-width:280px}
+.gps-controls{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:14px;padding:12px 16px;margin-bottom:18px;font-size:11.5px;color:#fff;text-align:left;line-height:1.7;max-width:300px}
+.gps-controls b{color:var(--gold)}
+.gps-start{background:linear-gradient(180deg,#fbbf24,#f59e0b);color:var(--navy-deep);font-weight:800;font-size:16px;padding:14px 36px;border:none;border-radius:14px;cursor:pointer;font-family:inherit;box-shadow:0 6px 20px rgba(251,191,36,0.4);letter-spacing:0.5px}
+
+/* League */
+.league-mission{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,0.04);gap:10px}
+.mission-icon{width:38px;height:38px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.mission-content{flex:1;min-width:0}
+.mission-text{font-size:13px;font-weight:600;color:var(--text);line-height:1.3}
+.mission-points{font-size:10.5px;color:var(--muted);font-weight:500;margin-top:2px}
+.mission-points b{color:var(--gold-deep)}
+.mission-btn{border:none;color:#fff;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
+.mission-btn.add{background:var(--green)}
+.mission-btn.start{background:#6366f1}
+.mission-btn.register{background:#8b5cf6}
+.mission-btn.done{background:#cbd5e1;cursor:default}
+.mission-btn:active{transform:scale(0.95)}
+
+/* Report */
+.report-bg{display:flex;flex-direction:column;height:100%;min-height:100%}
+.report-spacer{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--muted);font-size:13px;text-align:center;padding:20px}
+.report-spacer .icon{font-size:56px;margin-bottom:12px;opacity:0.4}
+.report-options{margin-bottom:12px}
+.report-option{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.opt-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-right:10px;flex-shrink:0}
+.report-option.risk .opt-icon{background:#fef3c7}
+.report-option.accident .opt-icon{background:#fee2e2}
+.report-option .opt-text{font-size:15px;font-weight:700;color:var(--text)}
+.report-option .opt-desc{font-size:11px;color:var(--muted);font-weight:400}
+.report-add-btn{background:var(--red);color:#fff;border:none;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.report-option.risk .report-add-btn{background:var(--gold-deep)}
+
+/* Form */
+.form-field{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.form-label{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;display:block}
+.form-label .en{font-weight:400;font-size:11.5px;color:var(--muted)}
+.form-input,.form-select,.form-textarea{width:100%;border:1px solid var(--border);border-radius:10px;background:var(--bg);font-family:inherit;font-size:14px;color:var(--text);outline:none;padding:10px 12px;transition:border-color 0.15s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--navy);background:#fff}
+.form-textarea{resize:vertical;min-height:60px}
+input[type="time"].form-input,input[type="date"].form-input{cursor:pointer;appearance:auto;-webkit-appearance:auto}
+input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:0.6}
+
+#report-mini-map{height:150px;border-radius:10px;overflow:hidden;margin-top:4px;background:#cce4f0;border:1px solid var(--border)}
+
+.risk-slider{-webkit-appearance:none;appearance:none;width:100%;height:6px;background:linear-gradient(90deg,#4ade80,#fbbf24,#ef4444);border-radius:3px;outline:none}
+.risk-slider::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;background:#fff;border:3px solid var(--navy);border-radius:50%;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+.risk-slider::-moz-range-thumb{width:24px;height:24px;background:#fff;border:3px solid var(--navy);border-radius:50%;cursor:pointer}
+.risk-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px;font-weight:500}
+.risk-current{text-align:center;font-size:18px;font-weight:800;color:var(--navy);margin-top:6px;font-family:'Bebas Neue',sans-serif;letter-spacing:0.5px}
+
+.photo-upload{background:var(--bg);border:2px dashed var(--border);border-radius:12px;height:120px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;cursor:pointer;position:relative;overflow:hidden}
+.photo-upload-icon{font-size:32px;color:var(--muted)}
+.photo-upload-text{font-size:11px;color:var(--muted);font-weight:500}
+.photo-upload img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo-upload input{display:none}
+
+.verify-option{display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:10px;background:var(--bg);margin-bottom:6px;font-size:12.5px;cursor:pointer;border:2px solid transparent;transition:all 0.15s}
+.verify-option.selected{border-color:var(--red);background:#fef2f2}
+.verify-radio{width:18px;height:18px;border:2px solid var(--muted);border-radius:50%;flex-shrink:0;margin-top:1px;position:relative;background:#fff}
+.verify-option.selected .verify-radio{border-color:var(--red)}
+.verify-option.selected .verify-radio::after{content:'';position:absolute;inset:3px;background:var(--red);border-radius:50%}
+
+.submit-btn{width:100%;background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);color:#fff;border:none;padding:14px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px;box-shadow:0 6px 16px rgba(10,46,92,0.3);display:flex;align-items:center;justify-content:center;gap:8px}
+.submit-btn:active{transform:scale(0.98)}
+
+.back-btn{background:#fff;border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;display:inline-flex;align-items:center;gap:4px}
+
+/* MotoGuide */
+.guide-hero{background:linear-gradient(135deg,#ef4444 0%,#f97316 100%);border-radius:20px;padding:18px;margin-bottom:14px;color:#fff;position:relative;overflow:hidden}
+.guide-hero h2{font-size:24px;font-weight:900;letter-spacing:0.5px;font-family:'Bebas Neue',sans-serif;margin-bottom:4px}
+.guide-hero p{font-size:12px;line-height:1.5;opacity:0.95;margin-bottom:12px}
+.guide-search{display:flex;align-items:center;background:rgba(255,255,255,0.95);border-radius:12px;padding:8px 12px;gap:8px}
+.guide-search input{flex:1;border:none;outline:none;font-family:inherit;font-size:13px;background:transparent;color:var(--text)}
+
+.cuisine-filters{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding:2px 0 4px;-webkit-overflow-scrolling:touch}
+.cuisine-filters::-webkit-scrollbar{display:none}
+.cuisine-chip{padding:6px 12px;background:#fff;border-radius:14px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;border:1px solid var(--border);transition:all 0.15s;font-family:inherit}
+.cuisine-chip.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+.restaurant-card{background:#fff;border-radius:16px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04),0 4px 12px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.15s}
+.restaurant-card:active{transform:scale(0.98)}
+.restaurant-photo{height:130px;background-size:cover;background-position:center;position:relative;display:flex;align-items:center;justify-content:center;font-size:64px}
+.photo-emoji-fallback{position:absolute;bottom:8px;right:50%;transform:translateX(50%);font-size:28px;background:rgba(15,23,42,0.65);width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+.restaurant-photo .badge{position:absolute;top:8px;right:8px;background:rgba(15,23,42,0.85);color:#fff;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:3px;backdrop-filter:blur(6px)}
+.restaurant-photo .open-tag{position:absolute;top:8px;left:8px;background:var(--green);color:#fff;padding:3px 9px;border-radius:8px;font-size:10.5px;font-weight:700;z-index:3}
+.restaurant-photo .open-tag.closed{background:var(--muted)}
+/* Graphic card design (no photos) */
+.rgraphic{overflow:hidden}
+.rgraphic-pattern{position:absolute;inset:0;background-image:radial-gradient(circle at 20% 30%,rgba(255,255,255,0.15) 0,transparent 8%),radial-gradient(circle at 70% 60%,rgba(255,255,255,0.12) 0,transparent 10%),radial-gradient(circle at 85% 20%,rgba(255,255,255,0.1) 0,transparent 7%),radial-gradient(circle at 40% 80%,rgba(0,0,0,0.08) 0,transparent 9%);background-size:cover}
+.rgraphic-emoji{position:relative;z-index:2;font-size:52px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.25))}
+.rgraphic-cuisine{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:3;background:rgba(255,255,255,0.25);color:#fff;font-size:11px;font-weight:700;padding:3px 12px;border-radius:10px;backdrop-filter:blur(6px);white-space:nowrap;letter-spacing:0.3px;text-shadow:0 1px 2px rgba(0,0,0,0.2)}
+.restaurant-info{padding:12px 14px}
+.restaurant-name{font-size:15px;font-weight:800;color:var(--text);margin-bottom:2px}
+.restaurant-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-bottom:6px;flex-wrap:wrap}
+.restaurant-meta .dot{width:3px;height:3px;background:var(--muted);border-radius:50%}
+.restaurant-meta .price-tag{font-weight:700;color:var(--green)}
+.restaurant-tags{display:flex;gap:5px;flex-wrap:wrap}
+.restaurant-tag{background:var(--bg);color:var(--muted);font-size:10.5px;font-weight:500;padding:2px 8px;border-radius:8px}
+.restaurant-tag.discount{background:#fef3c7;color:var(--gold-deep);font-weight:700}
+
+#page-restaurant-detail .detail-photo{height:200px;background-size:cover;background-position:center;position:relative;display:flex;align-items:center;justify-content:center;font-size:96px;border-radius:16px;margin-bottom:14px;overflow:hidden}
+.detail-name{font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px}
+.detail-rating-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.detail-rating{display:flex;align-items:center;gap:3px;font-weight:700;font-size:14px}
+.detail-rating .stars{color:var(--gold)}
+.detail-info-row{display:flex;align-items:center;gap:8px;padding:8px 0;font-size:13px;color:var(--text);border-bottom:1px solid #f1f5f9}
+.detail-info-row:last-child{border-bottom:none}
+.detail-info-row .icon{width:28px;text-align:center;font-size:16px}
+
+.review-item{padding:10px 0;border-bottom:1px solid #f1f5f9}
+.review-item:last-child{border-bottom:none}
+.review-header{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.review-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.review-name{font-size:13px;font-weight:700;color:var(--text)}
+.review-stars{color:var(--gold);font-size:11px}
+.review-date{font-size:10px;color:var(--muted);margin-left:auto}
+.review-text{font-size:12px;color:var(--muted);line-height:1.5;margin-left:40px}
+
+.star-input{display:flex;gap:6px;font-size:36px;justify-content:center;margin:8px 0}
+.star-input span{cursor:pointer;color:var(--border);transition:color 0.15s;user-select:none}
+.star-input span.filled{color:var(--gold)}
+
+/* Rewards */
+.profile-circle{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--navy-light));margin:4px auto 8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:36px;border:4px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,0.1)}
+.profile-name{text-align:center;font-size:16px;font-weight:700;color:var(--text);margin-bottom:2px}
+.profile-tier{text-align:center;font-size:11px;color:var(--gold-deep);font-weight:700;margin-bottom:14px;letter-spacing:0.5px}
+
+.points-card{background:linear-gradient(135deg,var(--gold) 0%,#f59e0b 100%);border-radius:16px;padding:14px 18px;margin-bottom:16px;color:#fff;position:relative;overflow:hidden}
+.points-card::before{content:'';position:absolute;top:-30%;right:-20%;width:140px;height:140px;background:radial-gradient(circle,rgba(255,255,255,0.3) 0%,transparent 70%);border-radius:50%}
+.points-card-label{font-size:11px;opacity:0.9;font-weight:600;margin-bottom:4px;letter-spacing:0.5px;text-transform:uppercase;position:relative}
+.points-display{display:flex;align-items:center;gap:10px;position:relative}
+.points-star{font-size:32px;line-height:1}
+.points-value{font-size:38px;font-weight:900;line-height:1;font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+
+.rewards-tabs{display:flex;gap:6px;margin-bottom:12px;background:var(--bg);padding:4px;border-radius:12px}
+.rewards-tab{flex:1;padding:8px;border:none;background:transparent;border-radius:9px;font-family:inherit;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:all 0.15s}
+.rewards-tab.active{background:#fff;color:var(--navy);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+
+.reward-item{background:#fff;border-radius:14px;padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.15s}
+.reward-item:active{transform:scale(0.98)}
+.reward-item.locked{opacity:0.55}
+.reward-thumb{width:58px;height:58px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.reward-info{flex:1;min-width:0}
+.reward-name{font-size:12.5px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:4px}
+.reward-desc{font-size:10.5px;color:var(--muted);margin-bottom:4px}
+.reward-cost{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:800;color:var(--gold-deep);font-family:'Bebas Neue',sans-serif;letter-spacing:0.5px}
+.reward-cost .star{color:var(--gold);font-size:16px}
+.reward-action{background:var(--navy);color:#fff;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
+.reward-action:disabled{background:#cbd5e1;cursor:not-allowed}
+
+.coupon-card{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:14px;padding:14px;margin-bottom:10px;position:relative;overflow:hidden}
+.coupon-card::before{content:'';position:absolute;top:50%;left:-10px;width:20px;height:20px;background:var(--bg);border-radius:50%;transform:translateY(-50%)}
+.coupon-card::after{content:'';position:absolute;top:50%;right:-10px;width:20px;height:20px;background:var(--bg);border-radius:50%;transform:translateY(-50%)}
+.coupon-name{font-size:13px;font-weight:700;margin-bottom:4px}
+.coupon-discount{font-size:24px;font-weight:900;font-family:'Bebas Neue',sans-serif;letter-spacing:0.5px}
+.coupon-code{font-family:'Courier New',monospace;background:rgba(255,255,255,0.2);padding:6px 10px;border-radius:6px;font-size:13px;font-weight:700;letter-spacing:1px;display:inline-block;margin-top:6px;border:1px dashed rgba(255,255,255,0.4)}
+.coupon-expire{font-size:10px;opacity:0.85;margin-top:4px}
+
+/* Profile */
+.profile-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:4px}
+.profile-header .avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--navy-light));display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;flex-shrink:0}
+.profile-header .name{font-size:16px;font-weight:700;color:var(--text)}
+.profile-header .badge{font-size:11px;color:var(--gold-deep);font-weight:600;margin-top:1px}
+
+.settings-card{background:#fff;border-radius:14px;padding:0 14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.settings-section-label{font-size:12px;font-weight:700;color:var(--navy);padding:12px 0 8px;letter-spacing:0.3px}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-top:1px solid #f1f5f9;font-size:13px;cursor:pointer}
+.settings-row:first-of-type{border-top:none}
+.settings-row .row-left{display:flex;align-items:center;gap:10px}
+.settings-row .row-icon{font-size:16px;width:22px;text-align:center;color:var(--muted)}
+.settings-row .arrow{color:#cbd5e1;font-size:16px}
+.version-text{color:var(--muted);font-size:12px;font-weight:500}
+.lang-toggle{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:11px;color:var(--text);font-weight:500}
+.signout-card{background:#fff;border-radius:14px;padding:12px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);display:flex;align-items:center;gap:10px;cursor:pointer}
+.signout-card .icon{font-size:16px;color:var(--red)}
+.signout-card .text{font-size:13px;font-weight:700;color:var(--red)}
+
+/* Dashboard */
+.dash-bg{background:#0f172a;min-height:100%;margin:-14px;padding:14px 14px 100px;color:#fff}
+.dash-header{margin-bottom:14px}
+.dash-title{font-size:24px;font-weight:900;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;color:var(--gold)}
+.dash-subtitle{font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px}
+.dash-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.dash-stat{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px}
+.dash-stat-label{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
+.dash-stat-value{font-size:26px;font-weight:900;font-family:'Bebas Neue',sans-serif;margin-top:2px;letter-spacing:0.5px}
+.dash-stat.green .dash-stat-value{color:#4ade80}
+.dash-stat.gold .dash-stat-value{color:var(--gold)}
+.dash-stat.red .dash-stat-value{color:#f87171}
+.dash-stat.blue .dash-stat-value{color:#60a5fa}
+.dash-stat-change{font-size:10px;color:#4ade80;margin-top:2px;font-weight:600}
+.dash-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;margin-bottom:12px}
+.dash-card h3{font-size:13px;font-weight:700;margin-bottom:10px;color:#fff;display:flex;align-items:center;justify-content:space-between}
+.live-tag{background:var(--red);color:#fff;font-size:9px;padding:2px 7px;border-radius:6px;font-weight:700;display:flex;align-items:center;gap:4px}
+.live-dot{width:5px;height:5px;background:#fff;border-radius:50%;animation:pulse 1.5s infinite}
+.dash-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px}
+.dash-bar-label{width:90px;color:rgba(255,255,255,0.7);font-size:10.5px}
+.dash-bar-track{flex:1;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}
+.dash-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),#f87171);border-radius:4px;transition:width 0.5s}
+.dash-bar-value{width:30px;text-align:right;color:#fff;font-weight:700}
+.dash-feed-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:11.5px}
+.dash-feed-item:last-child{border-bottom:none}
+.dash-feed-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.dash-feed-icon.risk{background:rgba(251,191,36,0.2)}
+.dash-feed-icon.accident{background:rgba(248,113,113,0.2)}
+.dash-feed-icon.review{background:rgba(96,165,250,0.2)}
+.dash-feed-content{flex:1;min-width:0}
+.dash-feed-title{color:#fff;font-weight:600;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-feed-meta{color:rgba(255,255,255,0.5);font-size:10px}
+#dash-map{height:280px;border-radius:10px;overflow:hidden;background:#1e293b}
+
+/* Bottom nav */
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;justify-content:space-around;align-items:flex-end;padding:6px 0 14px;z-index:100;box-shadow:0 -2px 12px rgba(0,0,0,0.04)}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;color:#cbd5e1;cursor:pointer;font-size:10.5px;font-weight:600;background:none;border:none;transition:color 0.15s;padding:4px 6px;flex:1;font-family:inherit}
+.nav-item.active{color:var(--navy);font-weight:700}
+.nav-item .icon{font-size:22px;line-height:1}
+.nav-item.add-item{flex:0 0 auto}
+.nav-add{width:56px;height:56px;background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;margin-top:-28px;box-shadow:0 6px 18px rgba(10,46,92,0.4);cursor:pointer;border:4px solid #fff;font-size:28px;font-weight:300;line-height:1;padding:0;transition:transform 0.15s}
+.nav-add:active{transform:scale(0.92)}
+
+/* Toast */
+.toast{position:fixed;top:40px;left:50%;transform:translateX(-50%) translateY(-120px);background:linear-gradient(135deg,var(--green),#15803d);color:#fff;padding:12px 20px;border-radius:14px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.25);transition:transform 0.4s cubic-bezier(0.16,1,0.3,1);max-width:360px;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.error{background:linear-gradient(135deg,var(--red),#991b1b)}
+.toast.warn{background:linear-gradient(135deg,#f59e0b,#b45309)}
+
+/* Modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,0.6);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
+.modal-backdrop.show{display:flex}
+.modal-card{background:#fff;border-radius:22px;padding:24px 20px;width:100%;max-width:380px;text-align:center;animation:modalIn 0.3s cubic-bezier(0.16,1,0.3,1);max-height:90vh;overflow-y:auto}
+@keyframes modalIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+.modal-icon{font-size:56px;margin-bottom:12px}
+.modal-title{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.modal-text{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:16px}
+.modal-share-link{background:var(--bg);padding:10px 12px;border-radius:10px;font-size:11px;color:var(--text);word-break:break-all;margin-bottom:12px;font-family:monospace;text-align:left;border:1px solid var(--border)}
+.modal-buttons{display:flex;gap:8px}
+.modal-btn{flex:1;padding:12px;border-radius:12px;font-family:inherit;font-size:13px;font-weight:700;border:none;cursor:pointer}
+.modal-btn.primary{background:var(--navy);color:#fff}
+.modal-btn.secondary{background:var(--bg);color:var(--text)}
+.qr-container{width:180px;height:180px;margin:0 auto 12px;background:#fff;padding:8px;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)}
+.qr-container svg,.qr-container canvas,.qr-container img{width:100%;height:100%}
+
+.empty-state{text-align:center;padding:30px 20px;color:var(--muted);font-size:13px}
+.empty-state .icon{font-size:48px;margin-bottom:8px;opacity:0.4}
+
+/* Auth overlay */
+.auth-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#061d3d 0%,#0a2e5c 50%,#1e4a82 100%);z-index:99999;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.auth-overlay.show{display:flex}
+.auth-card{background:#fff;border-radius:24px;padding:24px 22px;width:100%;max-width:380px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.3);max-height:95vh;overflow-y:auto}
+.auth-logo{width:64px;height:64px;background:linear-gradient(135deg,var(--gold),var(--gold-deep));border-radius:18px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 8px 24px rgba(251,191,36,0.4)}
+.auth-title{font-size:24px;font-weight:900;color:var(--navy);margin-bottom:4px}
+.auth-subtitle{font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.5}
+.auth-tabs{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:12px;margin-bottom:14px}
+.auth-tab{flex:1;padding:9px;border:none;background:transparent;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.auth-tab.active{background:#fff;color:var(--navy);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.auth-input-wrap{margin-bottom:10px;text-align:left}
+.auth-input-label{font-size:12px;font-weight:600;color:var(--navy);margin-bottom:5px;display:block}
+.auth-input{width:100%;border:1px solid var(--border);border-radius:12px;background:var(--bg);font-family:inherit;font-size:14px;outline:none;padding:11px 14px}
+.auth-input:focus{border-color:var(--navy);background:#fff}
+.auth-submit{width:100%;background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;border:none;padding:13px;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px;box-shadow:0 6px 16px rgba(10,46,92,0.3)}
+.auth-submit:disabled{opacity:0.6}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--muted);font-size:11px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.auth-secondary{display:flex;flex-direction:column;gap:8px}
+.auth-link-btn{background:transparent;border:1px solid var(--border);color:var(--text);padding:11px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.auth-link-btn.green{border-color:var(--green);color:var(--green)}
+.auth-link-btn.gold{border-color:var(--gold-deep);color:var(--gold-deep)}
+.auth-error{background:#fee2e2;color:#991b1b;padding:8px 12px;border-radius:10px;font-size:12px;margin-bottom:10px;display:none;text-align:left}
+.auth-error.show{display:block}
+.config-textarea{width:100%;min-height:140px;border:1px solid var(--border);border-radius:12px;background:#0f172a;color:#4ade80;font-family:'Courier New',monospace;font-size:11px;padding:10px;resize:vertical;outline:none;line-height:1.5}
+.config-step{text-align:left;font-size:11.5px;color:var(--text);margin-bottom:8px;padding:9px 11px;background:var(--bg);border-radius:9px;border-left:3px solid var(--navy);line-height:1.5}
+.config-step b{color:var(--navy)}
+.config-step a{color:var(--navy-light);text-decoration:underline;font-weight:600}
+.config-step code{background:#0f172a;color:#4ade80;padding:1px 5px;border-radius:3px;font-size:10.5px}
+
+/* Accident alert banner */
+.accident-alert{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-300px);width:calc(100% - 32px);max-width:400px;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;border-radius:16px;padding:14px 16px;z-index:9998;box-shadow:0 10px 40px rgba(220,38,38,0.6);transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);border:2px solid rgba(255,255,255,0.2)}
+.accident-alert.show{transform:translateX(-50%) translateY(0)}
+.alert-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.alert-icon{font-size:22px;animation:alertPulse 1s infinite}
+@keyframes alertPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+.alert-title{font-size:14px;font-weight:800;flex:1}
+.alert-close{background:rgba(255,255,255,0.2);border:none;color:#fff;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.alert-body{font-size:12px;opacity:0.95;margin-bottom:10px;line-height:1.5}
+.alert-actions{display:flex;gap:6px}
+.alert-btn{flex:1;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:8px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.alert-btn.primary{background:#fff;color:var(--red);border-color:#fff}
+
+.server-dot.demo{background:#fbbf24;box-shadow:0 0 8px #fbbf24}
+.server-dot.offline{background:#ef4444;box-shadow:0 0 8px #ef4444;animation:none}
+
+.section-title{font-size:14px;font-weight:700;color:var(--navy);margin:18px 4px 10px;display:flex;align-items:center;justify-content:space-between}
+.section-title .more-link{font-size:11px;color:var(--muted);cursor:pointer;font-weight:500}
+</style>
+</head>
+<body>
+
+<!-- AUTH OVERLAY -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-card">
+    <button onclick="closeAuthOverlay()" style="position:absolute;top:12px;right:12px;background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;color:var(--muted);">×</button>
+    <div class="auth-logo">🛡️</div>
+    <div class="auth-title">เข้าสู่ระบบ MotoGuard</div>
+    <div class="auth-subtitle">เข้าสู่ระบบเพื่อบันทึกข้อมูลข้ามอุปกรณ์<br>และรับแจ้งเตือนอุบัติเหตุแบบเรียลไทม์ทั่วประเทศ</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-signin" onclick="switchAuthTab('signin')">เข้าสู่ระบบ</button>
+      <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">สมัครใหม่</button>
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+    <div id="auth-form-signin">
+      <div class="auth-input-wrap"><label class="auth-input-label">อีเมล</label><input type="email" class="auth-input" id="signin-email" placeholder="you@example.com" autocomplete="email"></div>
+      <div class="auth-input-wrap"><label class="auth-input-label">รหัสผ่าน</label><input type="password" class="auth-input" id="signin-password" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="auth-submit" id="signin-btn" onclick="doSignIn()">🔐 เข้าสู่ระบบ</button>
+    </div>
+    <div id="auth-form-signup" style="display:none;">
+      <div class="auth-input-wrap"><label class="auth-input-label">ชื่อที่แสดง</label><input type="text" class="auth-input" id="signup-name" placeholder="เช่น สมชาย"></div>
+      <div class="auth-input-wrap"><label class="auth-input-label">อีเมล</label><input type="email" class="auth-input" id="signup-email" placeholder="you@example.com" autocomplete="email"></div>
+      <div class="auth-input-wrap"><label class="auth-input-label">รหัสผ่าน <span style="color:var(--muted);font-weight:400;">(อย่างน้อย 6 ตัว)</span></label><input type="password" class="auth-input" id="signup-password" placeholder="••••••••" autocomplete="new-password"></div>
+      <button class="auth-submit" id="signup-btn" onclick="doSignUp()">✨ สมัครและเข้าสู่ระบบ</button>
+    </div>
+    <div class="auth-divider">หรือ</div>
+    <div class="auth-secondary">
+      <button class="auth-link-btn green" onclick="closeAuthOverlay()">🚀 ใช้แบบ Demo ต่อไป</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACCIDENT ALERT BANNER -->
+<div class="accident-alert" id="accident-alert">
+  <div class="alert-header">
+    <span class="alert-icon">🚨</span>
+    <span class="alert-title">แจ้งเตือนอุบัติเหตุ!</span>
+    <button class="alert-close" onclick="closeAccidentAlert()">×</button>
+  </div>
+  <div class="alert-body" id="accident-alert-body"></div>
+  <div class="alert-actions">
+    <button class="alert-btn" onclick="closeAccidentAlert()">ปิด</button>
+    <button class="alert-btn primary" onclick="viewAccidentOnMap()">🗺️ ดูบนแผนที่</button>
+  </div>
+</div>
+
+<div class="app-frame">
+  <header class="app-header">
+    <div class="header-top">
+      <div class="header-logo">
+        <div class="logo-icon">🛡️</div>
+        <div>
+          <h1 id="header-title">MotoGuard</h1>
+          <div class="subtitle">ขับขี่ปลอดภัย</div>
+        </div>
+      </div>
+      <div class="server-pill" onclick="navigate('dashboard')">
+        <div class="server-dot"></div>
+        <span id="server-status">MotoServer</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <main class="page active" id="page-home">
+    <div class="hero-card">
+      <div class="hero-greeting">สวัสดี 👋</div>
+      <div class="hero-name" id="hero-name">ผู้ใช้</div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-value gold" id="hero-points">99</div>
+          <div class="hero-stat-label">⭐ Moto Point</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value" id="hero-reports">0</div>
+          <div class="hero-stat-label">รายงานของคุณ</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value" id="hero-streak">7</div>
+          <div class="hero-stat-label">วันต่อเนื่อง</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo mode login banner -->
+    <div id="demo-banner" style="display:none;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:14px;padding:12px 14px;margin-bottom:14px;border:1px solid #fbbf24;cursor:pointer;" onclick="openAuthOverlay()">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:24px;">💡</div>
+        <div style="flex:1;">
+          <div style="font-size:12.5px;font-weight:700;color:#78350f;">โหมด Demo · ใช้งานชั่วคราว</div>
+          <div style="font-size:11px;color:#92400e;margin-top:2px;">เข้าสู่ระบบเพื่อเก็บแต้มและภารกิจไว้ข้ามอุปกรณ์</div>
+        </div>
+        <div style="font-size:18px;color:#92400e;">›</div>
+      </div>
+    </div>
+
+    <div class="quick-actions">
+      <div class="quick-action games" onclick="navigate('games')">
+        <div class="qa-icon">🎮</div>
+        <div class="qa-title">Games</div>
+        <div class="qa-desc">ฝึกตัดสินใจ</div>
+      </div>
+      <div class="quick-action guide" onclick="navigate('guide')">
+        <div class="qa-icon">🍜</div>
+        <div class="qa-title">MotoGuide</div>
+        <div class="qa-desc">รีวิวร้านอาหาร</div>
+      </div>
+      <div class="quick-action rewards" onclick="navigate('rewards')">
+        <div class="qa-icon">🎁</div>
+        <div class="qa-title">Rewards</div>
+        <div class="qa-desc">แลกของรางวัล</div>
+      </div>
+      <div class="quick-action dashboard" onclick="navigate('dashboard')">
+        <div class="qa-icon">📊</div>
+        <div class="qa-title">Dashboard</div>
+        <div class="qa-desc">MotoServer สถิติ</div>
+      </div>
+    </div>
+
+    <div class="card map-card">
+      <h2>🔥 แผนที่จุดเสี่ยง</h2>
+      <div class="subt">ประเทศไทย</div>
+      <div id="heatmap"></div>
+      <div class="map-legend">
+        <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span>เสี่ยงต่ำ</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#facc15;"></span>ปานกลาง</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span>เสี่ยงสูง</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#dc2626;"></span>อันตราย</div>
+        <div class="legend-item"><span style="font-size:13px;">📍</span>แตะหมุดดูรายละเอียด</div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:14px 16px;">
+      <h3 style="font-size:15px;color:var(--navy);font-weight:700;margin-bottom:10px;">🔔 การแจ้งเตือน</h3>
+      <div id="notification-list"></div>
+    </div>
+  </main>
+
+  <!-- GAMES -->
+  <main class="page" id="page-games">
+    <div class="games-hero">
+      <h2>🎮 GAMES ZONE</h2>
+      <p>ฝึกการตัดสินใจในสถานการณ์เสี่ยง สะสม Moto Points</p>
+    </div>
+    <div class="game-card brake" onclick="openBrakeOrCrash()">
+      <div class="game-card-icon">🏍️</div>
+      <div class="game-card-text">
+        <div class="game-card-title">Brake or Crash</div>
+        <div class="game-card-desc">เกมเรียลไทม์ — ขับมอเตอร์ไซค์ หลบรถ เบรกที่ไฟแดง สะสมคะแนน</div>
+      </div>
+      <div class="game-card-arrow">›</div>
+    </div>
+    <div class="game-card league" onclick="navigate('safe-rider')">
+      <div class="game-card-icon">🏆</div>
+      <div class="game-card-text">
+        <div class="game-card-title">Safe Rider League</div>
+        <div class="game-card-desc">ทำภารกิจปลอดภัยในชีวิตจริง สะสมคะแนนแลกของรางวัล</div>
+      </div>
+      <div class="game-card-arrow">›</div>
+    </div>
+    <div class="card" style="padding:14px;">
+      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;">🏅 อันดับสูงสุดของคุณ</div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;">
+        <span style="color:var(--muted);">Brake or Crash Best Score</span>
+        <b id="best-score" style="color:var(--gold-deep);font-family:'Bebas Neue',sans-serif;font-size:16px;">0</b>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-top:1px solid #f1f5f9;">
+        <span style="color:var(--muted);">ภารกิจที่ทำสำเร็จ</span>
+        <b id="missions-done" style="color:var(--gold-deep);font-family:'Bebas Neue',sans-serif;font-size:16px;">0</b>
+      </div>
+    </div>
+  </main>
+
+  <!-- SAFE RIDER LEAGUE -->
+  <main class="page" id="page-safe-rider">
+    <button class="back-btn" onclick="navigate('games')">← กลับ</button>
+    <div class="games-hero">
+      <h2>🏆 SAFE RIDER LEAGUE</h2>
+      <p>ทำภารกิจ สะสมคะแนน เก็บแต้มไปแลกของรางวัล</p>
+    </div>
+    <div id="missions-list"></div>
+  </main>
+
+  <!-- BRAKE GAME -->
+  <div class="game-page" id="page-brake-game">
+    <div class="game-header">
+      <button class="gh-back" onclick="exitGame()">← ออก</button>
+      <div class="game-stats">
+        <div class="game-stat"><span class="icon">❤️</span><span id="game-health">3</span></div>
+        <div class="game-stat score"><span class="icon">⭐</span><span id="game-score">0</span></div>
+        <div class="game-stat"><span class="icon">🚀</span><span id="game-speed">1.0x</span></div>
+      </div>
+    </div>
+    <div class="game-canvas" id="game-canvas">
+      <div class="road-edge-left"></div>
+      <div class="road-edge-right"></div>
+      <div class="lane-divider-anim" id="lane-anim"></div>
+
+      <div class="motorcycle" id="motorcycle">
+        <svg viewBox="0 0 50 78" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="25" cy="13" rx="11" ry="11" fill="#fbbf24" stroke="#1a1a1a" stroke-width="1.5"/>
+          <rect x="18" y="24" width="14" height="30" rx="3" fill="#1e40af" stroke="#0f172a" stroke-width="1.5"/>
+          <rect x="9" y="32" width="32" height="6" fill="#0f172a"/>
+          <rect x="16" y="54" width="18" height="20" rx="5" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5"/>
+          <circle cx="25" cy="64" r="6" fill="#dc2626"/>
+          <ellipse cx="25" cy="13" rx="3" ry="4" fill="#dc2626"/>
+        </svg>
+      </div>
+
+      <div id="obstacles-container"></div>
+
+      <div class="game-toast" id="game-toast"></div>
+      <div class="game-controls">
+        <button class="lane-btn" onmousedown="moveLane('left')" ontouchstart="event.preventDefault();moveLane('left')">←</button>
+        <button class="brake-btn" id="btn-brake"
+          onmousedown="setBrake(true)" onmouseup="setBrake(false)" onmouseleave="setBrake(false)"
+          ontouchstart="event.preventDefault();setBrake(true)" ontouchend="event.preventDefault();setBrake(false)">
+          <span class="icon">🛑</span><span class="label">BRAKE</span>
+        </button>
+        <button class="lane-btn" onmousedown="moveLane('right')" ontouchstart="event.preventDefault();moveLane('right')">→</button>
+      </div>
+
+      <div class="game-pre-start" id="game-pre-start">
+        <div class="gps-title">BRAKE OR CRASH</div>
+        <div class="gps-desc">ขับมอเตอร์ไซค์ หลบสิ่งกีดขวาง เบรกที่ไฟแดงและทางม้าลาย สะสมคะแนนให้นานที่สุด!</div>
+        <div class="gps-controls">
+          <b>← →</b> เปลี่ยนเลน (หลบรถ/หลุม)<br>
+          <b>🛑 BRAKE</b> เบรก (ไฟแดง/คนข้าม/ทางลื่น)<br>
+          <b>คีย์บอร์ด:</b> A/D, ←/→, Space
+        </div>
+        <button class="gps-start" onclick="startGame()">▶ เริ่มเล่น</button>
+      </div>
+
+      <div class="game-overlay" id="game-overlay">
+        <div class="game-over-card">
+          <div class="go-icon">💥</div>
+          <div class="go-title">GAME OVER</div>
+          <div class="go-subtitle">ลองใหม่ดูสิ!</div>
+          <div class="go-stats">
+            <div class="go-stat"><div class="go-stat-value" id="go-score">0</div><div class="go-stat-label">Score</div></div>
+            <div class="go-stat"><div class="go-stat-value" id="go-points">+0</div><div class="go-stat-label">Points</div></div>
+            <div class="go-stat"><div class="go-stat-value" id="go-survived">0s</div><div class="go-stat-label">Survived</div></div>
+          </div>
+          <div class="go-buttons">
+            <button class="go-btn secondary" onclick="exitGame()">ออก</button>
+            <button class="go-btn primary" onclick="restartGame()">▶ เล่นใหม่</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOTOGUIDE -->
+  <main class="page" id="page-guide">
+    <div class="guide-hero">
+      <h2>🍜 MOTOGUIDE</h2>
+      <p>รีวิวร้านอาหาร <b id="guide-count">50</b> ร้านใกล้ ม.มหิดล ศาลายา · พร้อมส่วนลดสำหรับสมาชิก MotoGuard</p>
+      <div class="guide-search">
+        <span>🔍</span>
+        <input type="text" placeholder="ค้นหาร้าน..." id="guide-search-input" oninput="renderRestaurants()">
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin:6px 4px 8px;text-align:center;">
+      📊 <b id="guide-result-count">0</b> ร้านที่ตรงกับการค้นหา
+    </div>
+    <div class="cuisine-filters" id="cuisine-filters"></div>
+    <div id="restaurants-list"></div>
+  </main>
+
+  <main class="page" id="page-restaurant-detail">
+    <button class="back-btn" onclick="navigate('guide')">← กลับ</button>
+    <div id="restaurant-detail-content"></div>
+  </main>
+
+  <!-- REPORT MENU -->
+  <main class="page" id="page-report">
+    <div class="report-bg">
+      <div class="report-spacer">
+        <div class="icon">📍</div>
+        <div>เลือกประเภทรายงาน</div>
+        <div style="font-size:11px;margin-top:6px;">รายงานจะส่งไป MotoServer<br>ผู้ใช้คนอื่นจะเห็นภายในไม่กี่วินาที</div>
+      </div>
+      <div class="report-options">
+        <div class="report-option risk">
+          <div class="opt-icon">⚠️</div>
+          <div style="flex:1;">
+            <div class="opt-text">แจ้งจุดเสี่ยง</div>
+            <div class="opt-desc">ถนนชำรุด, ลื่น, สิ่งกีดขวาง</div>
+          </div>
+          <button class="report-add-btn" onclick="openReportForm('risk')">Add</button>
+        </div>
+        <div class="report-option accident">
+          <div class="opt-icon">🚨</div>
+          <div style="flex:1;">
+            <div class="opt-text">แจ้งอุบัติเหตุ</div>
+            <div class="opt-desc">รถชน, รถล้ม, มีผู้บาดเจ็บ</div>
+          </div>
+          <button class="report-add-btn" onclick="openReportForm('accident')">Add</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- REPORT FORM -->
+  <main class="page" id="page-report-form">
+    <button class="back-btn" onclick="navigate('report')">← กลับ</button>
+    <div class="form-field">
+      <label class="form-label">📅 วันที่ <span class="en">(Date)</span></label>
+      <input type="date" class="form-input" id="form-date">
+    </div>
+    <div class="form-field">
+      <label class="form-label">🏷️ ประเภทเหตุการณ์ <span class="en">(Type)</span></label>
+      <select class="form-select" id="form-type">
+        <option value="">-- เลือกประเภท --</option>
+        <option value="ถนนลื่น">💧 ถนนลื่น</option>
+        <option value="พื้นผิวชำรุด">🕳️ พื้นผิวชำรุด</option>
+        <option value="หลุมบ่อ">⚫ หลุมบ่อ</option>
+        <option value="สิ่งกีดขวาง">🚧 สิ่งกีดขวาง</option>
+        <option value="ไฟส่องสว่างชำรุด">💡 ไฟส่องสว่างชำรุด</option>
+        <option value="สัญญาณไฟเสีย">🚦 สัญญาณไฟเสีย</option>
+        <option value="ทางโค้งอันตราย">↪️ ทางโค้งอันตราย</option>
+        <option value="ทัศนวิสัยต่ำ">🌫️ ทัศนวิสัยต่ำ</option>
+        <option value="รถชน">💥 รถชนกัน</option>
+        <option value="รถล้ม">🏍️ รถจักรยานยนต์ล้ม</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label class="form-label">📍 ตำแหน่ง <span class="en">(Location)</span></label>
+      <div id="report-mini-map"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:6px;">
+        <span style="display:inline-block;width:8px;height:8px;background:var(--red);border-radius:50%;"></span>
+        <span id="loc-coords">แตะแผนที่เพื่อเลือกตำแหน่ง</span>
+      </div>
+      <button type="button" onclick="useCurrentLocation()" style="margin-top:8px;background:var(--bg);border:1px solid var(--border);padding:6px 10px;border-radius:8px;font-family:inherit;font-size:11px;color:var(--navy);font-weight:600;cursor:pointer;">📍 ใช้ตำแหน่งปัจจุบัน</button>
+    </div>
+    <div class="form-field">
+      <label class="form-label">📊 ระดับความเสี่ยง <span class="en">(Risk Level)</span></label>
+      <input type="range" min="1" max="10" value="7" class="risk-slider" id="risk-level" oninput="updateRisk()">
+      <div class="risk-labels"><span>1 ต่ำ</span><span>5 กลาง</span><span>10 สูง</span></div>
+      <div class="risk-current" id="risk-level-value">7 / 10</div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">📍 พื้นที่ที่ได้รับผลกระทบ <span class="en">(Affected Area)</span></label>
+      <input type="text" class="form-input" id="form-area" placeholder="เช่น เลนซ้าย, ทางแยก">
+    </div>
+    <div class="form-field">
+      <label class="form-label">📷 รูปภาพประกอบ <span class="en" style="color:#dc2626;">* จำเป็นต้องแนบ</span></label>
+      <label class="photo-upload" for="form-photo">
+        <span class="photo-upload-icon" id="photo-icon">📷</span>
+        <span class="photo-upload-text" id="photo-text">แตะเพื่อถ่ายภาพ / เลือกรูป (จำเป็น)</span>
+        <img id="photo-preview" style="display:none;">
+        <input type="file" accept="image/*" capture="environment" id="form-photo">
+      </label>
+    </div>
+    <div class="form-field">
+      <label class="form-label">⏰ เวลาที่พบ <span class="en">(Time Observed)</span></label>
+      <input type="time" class="form-input" id="form-time" style="font-family:'Courier New',monospace;font-size:18px;font-weight:700;letter-spacing:2px;background:#0f172a;color:#4ade80;border-color:#1e293b;">
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">แตะที่ช่องเพื่อเปลี่ยนเวลา</div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">📝 รายละเอียดเพิ่มเติม <span class="en">(Notes)</span></label>
+      <textarea class="form-textarea" id="form-notes" placeholder="คำอธิบายเหตุการณ์เพิ่มเติม..."></textarea>
+    </div>
+    <div class="form-field">
+      <label class="form-label">✅ การยืนยัน <span class="en">(Verification)</span></label>
+      <div class="verify-option selected" data-verify="confirmed" onclick="selectVerify(this)">
+        <div class="verify-radio"></div>
+        <div>
+          <div style="font-weight:600;">ยืนยันว่าเป็นเหตุการณ์จริง</div>
+          <div style="color:var(--muted);font-size:11px;margin-top:2px;">ฉันเห็นเหตุการณ์นี้ด้วยตัวเอง</div>
+        </div>
+      </div>
+      <div class="verify-option" data-verify="crowd" onclick="selectVerify(this)">
+        <div class="verify-radio"></div>
+        <div>
+          <div style="font-weight:600;">รอการตรวจสอบจาก Crowdsourced</div>
+          <div style="color:var(--muted);font-size:11px;margin-top:2px;">ให้ผู้ใช้คนอื่นช่วยยืนยัน</div>
+        </div>
+      </div>
+    </div>
+    <button class="submit-btn" onclick="submitReport()"><span>📤</span> ส่งรายงานไปยัง MotoServer</button>
+  </main>
+
+  <!-- REPORTS LIST -->
+  <main class="page" id="page-reports-list">
+    <button class="back-btn" onclick="navigate('home')">← กลับ</button>
+    <h2 style="font-size:16px;color:var(--navy);margin-bottom:12px;font-weight:700;">📋 รายงานทั้งหมดจาก MotoServer</h2>
+    <div id="reports-feed"></div>
+  </main>
+
+  <!-- REWARDS -->
+  <main class="page" id="page-rewards">
+    <div class="profile-circle" id="rewards-avatar">👤</div>
+    <div class="profile-name" id="rewards-name">ผู้ใช้</div>
+    <div class="profile-tier">⭐ GOLD MEMBER</div>
+    <div class="points-card">
+      <div class="points-card-label">Moto Point ของคุณ</div>
+      <div class="points-display">
+        <span class="points-star">⭐</span>
+        <span class="points-value" id="rewards-points">99</span>
+      </div>
+    </div>
+    <div id="my-coupons"></div>
+    <div class="rewards-tabs">
+      <button class="rewards-tab active" data-cat="all" onclick="filterRewards('all')">ทั้งหมด</button>
+      <button class="rewards-tab" data-cat="food" onclick="filterRewards('food')">🍜 อาหาร</button>
+      <button class="rewards-tab" data-cat="safety" onclick="filterRewards('safety')">🪖 ปลอดภัย</button>
+      <button class="rewards-tab" data-cat="other" onclick="filterRewards('other')">🎁 อื่นๆ</button>
+    </div>
+    <div id="rewards-list"></div>
+  </main>
+
+  <!-- PROFILE -->
+  <main class="page" id="page-profile">
+    <div class="profile-header">
+      <div class="avatar" id="profile-avatar">👤</div>
+      <div>
+        <div class="name" id="profile-name">ผู้ใช้</div>
+        <div class="badge">⭐ <span id="profile-tier">GOLD</span> · <span id="profile-points">99</span> pts</div>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-section-label">🔗 แชร์และเชื่อมต่อ</div>
+      <div class="settings-row" onclick="openShareModal()">
+        <div class="row-left"><span class="row-icon">📤</span> แชร์แอป MotoGuard</div>
+        <span class="arrow">›</span>
+      </div>
+      <div class="settings-row" onclick="navigate('dashboard')">
+        <div class="row-left"><span class="row-icon">📊</span> MotoServer Dashboard</div>
+        <span class="arrow">›</span>
+      </div>
+      <div class="settings-row" onclick="navigate('reports-list')">
+        <div class="row-left"><span class="row-icon">📋</span> รายงานทั้งหมด</div>
+        <span class="arrow">›</span>
+      </div>
+      <div class="settings-row" onclick="requestNotificationPermission()">
+        <div class="row-left"><span class="row-icon">🔔</span> เปิดการแจ้งเตือน</div>
+        <span class="arrow">›</span>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-section-label">บัญชีของฉัน</div>
+      <div class="settings-row">
+        <div class="row-left"><span class="row-icon">📧</span> อีเมล</div>
+        <span class="version-text" id="profile-email-display">-</span>
+      </div>
+      <div class="settings-row">
+        <div class="row-left"><span class="row-icon">🔌</span> โหมด</div>
+        <span class="version-text" id="profile-mode-display">💻 Demo</span>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-section-label">General</div>
+      <div class="settings-row" onclick="showHelp()">
+        <div class="row-left"><span class="row-icon">📖</span> วิธีใช้งาน</div><span class="arrow">›</span>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-section-label">App Setting</div>
+      <div class="settings-row">
+        <div class="row-left"><span class="row-icon">🌐</span> Language</div>
+        <span class="lang-toggle">🇹🇭 ไทย | 🇬🇧 Eng</span>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-section-label">Other</div>
+      <div class="settings-row" onclick="showToast('contact@motoguard.app','warn')">
+        <div class="row-left"><span class="row-icon">✉️</span> Contact us</div><span class="arrow">›</span>
+      </div>
+      <div class="settings-row" onclick="showToast('Privacy first — เราเข้ารหัสข้อมูลของคุณ','warn')">
+        <div class="row-left"><span class="row-icon">🛡️</span> Security Policy</div><span class="arrow">›</span>
+      </div>
+      <div class="settings-row">
+        <div class="row-left"><span class="row-icon">ℹ️</span> Version</div>
+        <span class="version-text">3.0 (300001)</span>
+      </div>
+    </div>
+    <div class="signout-card" id="auth-action-card" onclick="handleAuthAction()">
+      <span class="icon" id="auth-action-icon">🔐</span><span class="text" id="auth-action-text">เข้าสู่ระบบ / สมัครสมาชิก</span>
+    </div>
+  </main>
+
+  <!-- DASHBOARD -->
+  <main class="page" id="page-dashboard">
+    <div class="dash-bg">
+      <button class="back-btn" onclick="navigate('home')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;">← กลับ</button>
+      <div class="dash-header">
+        <div class="dash-title">⚡ MOTOSERVER</div>
+        <div class="dash-subtitle">Real-time monitoring & analytics dashboard for developers</div>
+      </div>
+      <div class="dash-stats-grid">
+        <div class="dash-stat blue">
+          <div class="dash-stat-label">Total Reports</div>
+          <div class="dash-stat-value" id="dash-total">0</div>
+          <div class="dash-stat-change" id="dash-total-change">+0 today</div>
+        </div>
+        <div class="dash-stat red">
+          <div class="dash-stat-label">Accidents</div>
+          <div class="dash-stat-value" id="dash-accidents">0</div>
+          <div class="dash-stat-change">Active monitoring</div>
+        </div>
+        <div class="dash-stat gold">
+          <div class="dash-stat-label">Active Users</div>
+          <div class="dash-stat-value" id="dash-users">0</div>
+          <div class="dash-stat-change">Last 24h</div>
+        </div>
+        <div class="dash-stat green">
+          <div class="dash-stat-label">Avg Risk</div>
+          <div class="dash-stat-value" id="dash-risk">0.0</div>
+          <div class="dash-stat-change">/ 10</div>
+        </div>
+      </div>
+      <div class="dash-card">
+        <h3>🗺️ Heatmap แบบเรียลไทม์ <span class="live-tag"><span class="live-dot"></span>LIVE</span></h3>
+        <div id="dash-map"></div>
+      </div>
+      <div class="dash-card">
+        <h3>📊 ประเภทเหตุการณ์</h3>
+        <div id="dash-bars"></div>
+      </div>
+      <div class="dash-card">
+        <h3>📡 Real-time Feed <span class="live-tag"><span class="live-dot"></span>LIVE</span></h3>
+        <div id="dash-feed"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-page="home" onclick="navigate('home')">
+      <span class="icon">🏠</span><span>Home</span>
+    </button>
+    <button class="nav-item" data-page="games" onclick="navigate('games')">
+      <span class="icon">🎮</span><span>Games</span>
+    </button>
+    <button class="nav-item add-item">
+      <button class="nav-add" onclick="navigate('report')">＋</button>
+    </button>
+    <button class="nav-item" data-page="guide" onclick="navigate('guide')">
+      <span class="icon">🍜</span><span>Guide</span>
+    </button>
+    <button class="nav-item" data-page="profile" onclick="navigate('profile')">
+      <span class="icon">👤</span><span>Profile</span>
+    </button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- SHARE MODAL -->
+<div class="modal-backdrop" id="share-modal">
+  <div class="modal-card">
+    <div class="modal-icon">📤</div>
+    <div class="modal-title">แชร์ MotoGuard</div>
+    <div class="modal-text">ทุกคนที่เปิดลิงก์จะเห็นรายงานเดียวกันบน MotoServer แบบเรียลไทม์</div>
+    <div class="qr-container" id="qr-container"></div>
+    <div class="modal-share-link" id="share-link"></div>
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeShareModal()">ปิด</button>
+      <button class="modal-btn primary" onclick="copyShareLink()">📋 คัดลอกลิงก์</button>
+    </div>
+  </div>
+</div>
+
+<!-- REVIEW MODAL -->
+<div class="modal-backdrop" id="review-modal">
+  <div class="modal-card" style="text-align:left;">
+    <div class="modal-title" style="text-align:center;">✍️ เขียนรีวิว</div>
+    <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;">+60 Moto Points</div>
+    <div style="font-size:12px;font-weight:700;color:var(--navy);margin-top:8px;">ให้คะแนน:</div>
+    <div class="star-input" id="review-stars">
+      <span data-v="1">⭐</span><span data-v="2">⭐</span><span data-v="3">⭐</span><span data-v="4">⭐</span><span data-v="5">⭐</span>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--navy);margin-top:8px;">รีวิวของคุณ:</div>
+    <textarea id="review-text" class="form-textarea" style="margin-top:6px;" placeholder="รสชาติ บรรยากาศ บริการ..."></textarea>
+    <div class="modal-buttons" style="margin-top:14px;">
+      <button class="modal-btn secondary" onclick="closeReviewModal()">ยกเลิก</button>
+      <button class="modal-btn primary" onclick="submitReview()">📝 ส่งรีวิว</button>
+    </div>
+  </div>
+</div>
+
+<!-- COUPON MODAL -->
+<div class="modal-backdrop" id="coupon-modal">
+  <div class="modal-card">
+    <div class="modal-icon">🎉</div>
+    <div class="modal-title">แลกของรางวัลสำเร็จ!</div>
+    <div class="modal-text">นำโค้ดนี้ไปใช้ที่ร้าน</div>
+    <div id="coupon-display"></div>
+    <div class="modal-buttons" style="margin-top:14px;">
+      <button class="modal-btn primary" onclick="closeCouponModal()" style="width:100%;">เข้าใจแล้ว</button>
+    </div>
+  </div>
+</div>
+
+<!-- MISSION MODAL — interactive missions -->
+<div class="modal-backdrop" id="mission-modal">
+  <div class="modal-card" style="text-align:left;max-width:400px;">
+    <div id="mission-modal-content"></div>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+<div class="modal-backdrop" id="help-modal">
+  <div class="modal-card" style="text-align:left;">
+    <div class="modal-title" style="text-align:center;">📖 วิธีใช้ MotoGuard</div>
+    <div style="font-size:12px;color:var(--text);line-height:1.7;">
+      <p style="margin-bottom:10px;"><b style="color:var(--navy);">🔥 Heatmap</b><br>ดูจุดเสี่ยงและอุบัติเหตุบนแผนที่จริง</p>
+      <p style="margin-bottom:10px;"><b style="color:var(--navy);">＋ รายงาน</b><br>กดปุ่ม + กลางจอเพื่อแจ้งจุดเสี่ยง/อุบัติเหตุ</p>
+      <p style="margin-bottom:10px;"><b style="color:var(--navy);">🎮 เกม</b><br>เล่น Brake or Crash ฝึกตัดสินใจ และทำภารกิจ Safe Rider</p>
+      <p style="margin-bottom:10px;"><b style="color:var(--navy);">🍜 MotoGuide</b><br>รีวิวร้านอาหารใกล้ ม.มหิดล ศาลายา</p>
+      <p style="margin-bottom:10px;"><b style="color:var(--navy);">🎁 Rewards</b><br>แลกแต้มเป็นส่วนลดร้านอาหาร, อุปกรณ์ความปลอดภัย</p>
+      <p><b style="color:var(--navy);">📤 แชร์</b><br>ทุกเครื่องเชื่อมกับ MotoServer แบบเรียลไทม์</p>
+    </div>
+    <button class="modal-btn primary" onclick="document.getElementById('help-modal').classList.remove('show')" style="width:100%;margin-top:14px;">เข้าใจแล้ว</button>
+  </div>
+</div>
+
+<script>
+// ============ DATA ============
+const STORAGE_KEY='motoguard:reports:v3';
+const REVIEWS_KEY='motoguard:reviews:v1';
+const POINTS_KEY='motoguard:user:points';
+const MISSIONS_KEY='motoguard:user:missions';
+const BEST_SCORE_KEY='motoguard:user:bestscore';
+const REDEMPTIONS_KEY='motoguard:user:redemptions';
+
+let allReports=[], allReviews={}, userPoints=99, completedMissions={}, bestScore=0, redeemed=[];
+let userReportCount=0;
+let heatLayer=null, dashHeatLayer=null;
+let mainMap=null, reportMap=null, dashMap=null;
+let pickedLocation=null;
+let currentReportType='risk';
+let currentReviewRestaurant=null;
+let currentReviewStars=5;
+
+const SEED_REPORTS=[
+  {id:'s1',type:'risk',category:'พื้นผิวชำรุด',lat:13.7945,lng:100.3242,risk:8,area:'เลนซ้าย',notes:'ถนนชำรุดบริเวณทางแยก',time:'08:30',date:'2026-04-28',verify:'confirmed',source:'seed'},
+  {id:'s2',type:'risk',category:'ถนนลื่น',lat:13.7563,lng:100.5018,risk:7,area:'ทุกเลน',notes:'ฝนตกหนัก',time:'17:45',date:'2026-04-29',verify:'crowd',source:'seed'},
+  {id:'s3',type:'accident',category:'รถล้ม',lat:13.7460,lng:100.5440,risk:9,area:'เลนขวา',notes:'มอเตอร์ไซค์ลื่นล้ม',time:'07:15',date:'2026-04-30',verify:'confirmed',source:'seed'},
+  {id:'s4',type:'risk',category:'หลุมบ่อ',lat:13.7900,lng:100.3300,risk:6,area:'ตรงกลาง',notes:'หลุมขนาดใหญ่',time:'14:20',date:'2026-04-29',verify:'confirmed',source:'seed'},
+  {id:'s5',type:'risk',category:'ทางโค้งอันตราย',lat:13.7820,lng:100.3200,risk:8,area:'ทุกเลน',notes:'โค้งหักศอก',time:'20:00',date:'2026-04-27',verify:'confirmed',source:'seed'},
+  {id:'s6',type:'accident',category:'รถชน',lat:13.7280,lng:100.5240,risk:9,area:'ทางแยก',notes:'รถชนกัน',time:'09:30',date:'2026-04-30',verify:'crowd',source:'seed'},
+  {id:'s7',type:'risk',category:'สัญญาณไฟเสีย',lat:18.7883,lng:98.9853,risk:7,area:'ทุกเลน',notes:'ไฟแดงไม่ทำงาน',time:'06:00',date:'2026-04-28',verify:'confirmed',source:'seed'},
+  {id:'s8',type:'risk',category:'ถนนลื่น',lat:7.8804,lng:98.3923,risk:6,area:'ทางลาด',notes:'ฝนตก',time:'15:30',date:'2026-04-29',verify:'confirmed',source:'seed'},
+  {id:'s9',type:'accident',category:'รถล้ม',lat:13.7950,lng:100.3320,risk:10,area:'ทางม้าลาย',notes:'ขับเร็วเกิน',time:'18:30',date:'2026-04-30',verify:'confirmed',source:'seed'},
+  {id:'s10',type:'risk',category:'พื้นผิวชำรุด',lat:16.4322,lng:102.8236,risk:5,area:'เลนขวา',notes:'ถนนชำรุด',time:'11:00',date:'2026-04-26',verify:'crowd',source:'seed'},
+];
+
+// Real restaurants near Mahidol Salaya
+const RESTAURANTS=[
+  {id:'r1',name:'Music Square',emoji:'🎵',cuisine:'ไทย-ตะวันตก',lat:13.7950,lng:100.3250,rating:4.5,reviews:187,priceRange:300,hours:'10:00-19:00',distance:'0.2 กม.',tags:['ไทย','ตะวันตก','คาเฟ่'],discount:15,color:'#10b981',img:'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=600&q=80&auto=format&fit=crop',desc:'ร้านอาหารในวิทยาลัยดุริยางคศิลป์ ม.มหิดล บรรยากาศร่มรื่นท่ามกลางต้นไม้ มีอาหารไทย-ตะวันตกหลากหลาย ข้าวผัดมันกุ้งและพิซซ่าเด็ด'},
+  {id:'r2',name:"Anya's Place",emoji:'🍷',cuisine:'ฟิวชั่น',lat:13.7920,lng:100.3300,rating:4.7,reviews:234,priceRange:400,hours:'11:00-22:00',distance:'0.5 กม.',tags:['ฟิวชั่น','ไวน์','dessert'],discount:20,color:'#f59e0b',img:'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80&auto=format&fit=crop',desc:'ร้านอาหารฟิวชั่นไทย-ตะวันตก เจ้าของจบจากลอนดอน เมนูคุณภาพสูง สเต็กเซตคุ้มมาก เค้กและคุกกี้เด็ด'},
+  {id:'r3',name:'MotherCows Salaya',emoji:'🥛',cuisine:'นม-ขนมปัง',lat:13.7960,lng:100.3220,rating:4.3,reviews:142,priceRange:150,hours:'07:30-19:00',distance:'0.1 กม.',tags:['นมสด','คาเฟ่','ขนมปังถ่าน'],discount:10,color:'#fbbf24',img:'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600&q=80&auto=format&fit=crop',desc:'ร้านนมสดและขนมปังย่างถ่าน ตรงข้ามมหิดล นั่งจิบกาแฟแบบสบายๆ'},
+  {id:'r4',name:'Korae Korean BBQ',emoji:'🥩',cuisine:'เกาหลี',lat:13.7935,lng:100.3260,rating:4.4,reviews:312,priceRange:350,hours:'17:00-23:00',distance:'0.3 กม.',tags:['BBQ','บุฟเฟ่ต์','เกาหลี'],discount:15,color:'#dc2626',img:'https://images.unsplash.com/photo-1632558147849-39a4c3a72f0d?w=600&q=80&auto=format&fit=crop',desc:'Korean BBQ บุฟเฟ่ต์ 350 บาท คุ้มที่สุดในศาลายา หมูเชียลเด็ด มี banchan ครบ'},
+  {id:'r5',name:'Santoku Ramen',emoji:'🍜',cuisine:'ญี่ปุ่น',lat:13.7918,lng:100.3245,rating:4.5,reviews:267,priceRange:200,hours:'11:00-23:00',distance:'0.3 กม.',tags:['ราเมง','ญี่ปุ่น','late night'],discount:12,color:'#7c3aed',img:'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&q=80&auto=format&fit=crop',desc:'ราเมงญี่ปุ่นเปิดดึก เจ้าโปรดของนักศึกษามหิดลที่ต้องเรียนค่ำ น้ำซุปเข้มข้น'},
+  {id:'r6',name:'Little Tree Grocery',emoji:'☕',cuisine:'คาเฟ่',lat:13.7980,lng:100.3210,rating:4.6,reviews:198,priceRange:180,hours:'08:00-20:00',distance:'0.6 กม.',tags:['กาแฟ','เบเกอรี่','สวน'],discount:12,color:'#92400e',img:'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=80&auto=format&fit=crop',desc:'คาเฟ่บ้านไม้บรรยากาศคันทรี มีต้นไม้ใหญ่และสวนหลังบ้าน เหมาะนั่งทำงาน'},
+  {id:'r7',name:'Tianti Chicken Rice',emoji:'🍗',cuisine:'ไทย',lat:13.7912,lng:100.3268,rating:4.4,reviews:156,priceRange:80,hours:'10:00-21:00',distance:'0.4 กม.',tags:['ข้าวมันไก่','สมุนไพร','สุขภาพดี'],discount:10,color:'#65a30d',img:'https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=600&q=80&auto=format&fit=crop',desc:'ข้าวมันไก่เลี้ยงด้วยสมุนไพรและโพรไบโอติกส์ เนื้อนุ่มหอม'},
+  {id:'r8',name:'โกวเล็กสุกี้ฮ่องกง',emoji:'🍲',cuisine:'จีน',lat:13.7925,lng:100.3275,rating:4.3,reviews:188,priceRange:200,hours:'11:00-22:00',distance:'0.4 กม.',tags:['สุกี้','กุ้งอบวุ้นเส้น','ฮ่องกง'],discount:12,color:'#ec4899',img:'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=600&q=80&auto=format&fit=crop',desc:'สุกี้ฮ่องกงน้ำจิ้มหอม กุ้งอบวุ้นเส้นเด็ด ทุกโต๊ะต้องสั่ง'},
+  {id:'r9',name:'มันม่วงขนมไข่เต่า',emoji:'🥧',cuisine:'ของว่าง',lat:13.7940,lng:100.3255,rating:4.6,reviews:421,priceRange:30,hours:'09:00-19:00',distance:'0.0 กม.',tags:['มันม่วง','ขนมไข่เต่า','ของว่าง'],discount:5,color:'#a855f7',img:'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=600&q=80&auto=format&fit=crop',desc:'ขนมไข่เต่าหน้ามหิดล แป้งกรอบ ข้างในเส้นใยมันม่วงนุ่ม หวานธรรมชาติ ลูกใหญ่'},
+  {id:'r10',name:'ก๋วยเตี๋ยวเรือศาลายา',emoji:'🍜',cuisine:'ไทย',lat:13.7935,lng:100.3265,rating:4.6,reviews:512,priceRange:50,hours:'09:00-20:00',distance:'0.3 กม.',tags:['ก๋วยเตี๋ยว','ราคาถูก','เด็ด'],discount:8,color:'#f97316',img:'https://images.unsplash.com/photo-1591814468924-caf88d1232e1?w=600&q=80&auto=format&fit=crop',desc:'ก๋วยเตี๋ยวเรือชามละ 25 บาท น้ำซุปเข้มข้น เปิดมานานเป็นที่นิยมของนักศึกษา'},
+  {id:'r11',name:'Mahidol Food Center',emoji:'🍛',cuisine:'ไทย',lat:13.7945,lng:100.3245,rating:4.0,reviews:621,priceRange:60,hours:'07:00-19:00',distance:'0.0 กม.',tags:['ในม.','ราคาประหยัด','street food'],discount:5,color:'#0ea5e9',img:'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&q=80&auto=format&fit=crop',desc:'ศูนย์อาหารใน ม.มหิดล มีอาหารหลากหลาย ราคานักศึกษา'},
+  {id:'r12',name:"ปู๊ตี่ บะหมี่เกี๊ยวกุ้ง",emoji:'🍤',cuisine:'จีน',lat:13.7942,lng:100.3262,rating:4.5,reviews:278,priceRange:70,hours:'08:00-20:00',distance:'0.2 กม.',tags:['บะหมี่','เกี๊ยวกุ้ง','หมูแดง'],discount:8,color:'#fb923c',img:'https://images.unsplash.com/photo-1612927601601-6638404737ce?w=600&q=80&auto=format&fit=crop',desc:'เกี๊ยวชิ้นใหญ่ เนื้อแน่น หมูแดงเด็ด เป็นที่นิยมของนักศึกษามหิดล'},
+  {id:'r13',name:'ฮั่วเซ่งฮง ศาลายา',emoji:'🥟',cuisine:'จีน',lat:13.7928,lng:100.3271,rating:4.4,reviews:389,priceRange:250,hours:'10:00-22:00',distance:'0.4 กม.',tags:['ติ่มซำ','ขนมจีบ','ซาลาเปา'],discount:10,color:'#b91c1c',img:'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=600&q=80&auto=format&fit=crop',desc:'ร้านอาหารจีนเลื่องชื่อตรงข้าม ม.มหิดล ติ่มซำเด็ด ขนมจีบและซาลาเปาเด่น ข้าวหน้าเป็ดอร่อย'},
+  {id:'r14',name:'ศรีจันทร์ ซีฟู้ด',emoji:'🦐',cuisine:'ซีฟู้ด',lat:13.7910,lng:100.3265,rating:4.3,reviews:826,priceRange:180,hours:'17:00-01:00',distance:'0.3 กม.',tags:['ข้าวต้ม','ซีฟู้ด','รอบดึก'],discount:10,color:'#1e40af',img:'https://images.unsplash.com/photo-1559737558-2f5a35f4523b?w=600&q=80&auto=format&fit=crop',desc:'ข้าวต้มและซีฟู้ดรอบดึก เปิดถึงเที่ยงคืน เหมาะคนหิวค่ำคืน ไข่เจียวเด็ด'},
+  {id:'r15',name:'พุทธรักษา 2 เป็ดพะโล้',emoji:'🦆',cuisine:'จีน',lat:13.7918,lng:100.3258,rating:4.4,reviews:648,priceRange:90,hours:'09:00-21:00',distance:'0.2 กม.',tags:['เป็ดพะโล้','ข้าวหน้าเป็ด'],discount:8,color:'#92400e',img:'https://images.unsplash.com/photo-1606522754091-a3bbf9ad4cb3?w=600&q=80&auto=format&fit=crop',desc:'เป็ดพะโล้นุ่ม รสชาติดี ข้าวหน้าเป็ดและก๋วยเตี๋ยวเป็ดเด็ด ตรงข้าม ม.มหิดล'},
+  {id:'r16',name:'CMD Salaya Café',emoji:'🥗',cuisine:'คาเฟ่',lat:13.7965,lng:100.3215,rating:4.4,reviews:204,priceRange:150,hours:'07:30-19:00',distance:'0.3 กม.',tags:['คาเฟ่','salmon','eel'],discount:12,color:'#0891b2',img:'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&q=80&auto=format&fit=crop',desc:'ร้านเล็กน่ารัก แอร์เย็น แซลมอนนุ่ม ปลาไหล XL คุ้มมาก ใกล้มหิดลศาลายา'},
+  {id:'r17',name:'Hangar Café',emoji:'☕',cuisine:'คาเฟ่',lat:13.7975,lng:100.3225,rating:4.3,reviews:167,priceRange:130,hours:'08:00-20:00',distance:'0.5 กม.',tags:['กาแฟ','wifi','ทำงาน'],discount:10,color:'#0d9488',img:'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80&auto=format&fit=crop',desc:'คาเฟ่บรรยากาศโล่ง wifi เร็ว เหมาะนั่งทำงาน อ่านหนังสือ'},
+  {id:'r18',name:'แซ่บนัว ครัวบ้านนา',emoji:'🌶️',cuisine:'อีสาน',lat:13.7918,lng:100.3290,rating:4.5,reviews:234,priceRange:180,hours:'11:00-21:00',distance:'0.4 กม.',tags:['อีสาน','ส้มตำ','ปูดอง'],discount:12,color:'#dc2626',img:'https://images.unsplash.com/photo-1567337710282-00832b415979?w=600&q=80&auto=format&fit=crop',desc:'อาหารอีสานจัดจ้าน ส้มตำ ปูดอง กุ้งเผา บรรยากาศสวนต้นไม้ร่มรื่น'},
+  {id:'r19',name:'นิยมแซ่บ',emoji:'🍤',cuisine:'อีสาน',lat:13.7905,lng:100.3280,rating:4.4,reviews:156,priceRange:200,hours:'11:00-22:00',distance:'0.5 กม.',tags:['ส้มตำ','ปูดอง','ครอบครัว'],discount:10,color:'#ea580c',img:'https://images.unsplash.com/photo-1562967914-608f82629710?w=600&q=80&auto=format&fit=crop',desc:'แซ่บจัดเต็ม ส้มตำ ปูดอง กุ้งเผา บรรยากาศสวน เต็มไปด้วยต้นไม้ร่มรื่น'},
+  {id:'r20',name:'กลมกล่อม ศาลายา',emoji:'🥘',cuisine:'ไทย',lat:13.7958,lng:100.3268,rating:4.3,reviews:189,priceRange:220,hours:'10:00-21:00',distance:'0.2 กม.',tags:['คาเฟ่','ถ่ายรูป','natural'],discount:10,color:'#16a34a',img:'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80&auto=format&fit=crop',desc:'ร้านอาหารกึ่งคาเฟ่ตรงข้ามมหิดล หลายโซนถ่ายรูปสวย ของคาวหวานครบ'},
+  {id:'r21',name:'Salaya Pad Thai',emoji:'🍝',cuisine:'ไทย',lat:13.7910,lng:100.3260,rating:4.3,reviews:273,priceRange:80,hours:'10:00-22:00',distance:'0.3 กม.',tags:['ผัดไทย','ราคาถูก','street food'],discount:10,color:'#f97316',img:'https://images.unsplash.com/photo-1637806930600-37fa8892069d?w=600&q=80&auto=format&fit=crop',desc:'ร้านผัดไทยเจ้าเก่าศาลายา รสชาติเข้มข้น เส้นเหนียว ราคาประหยัด'},
+  {id:'r22',name:'Tia Tia Bingsu',emoji:'🍧',cuisine:'ของหวาน',lat:13.7942,lng:100.3258,rating:4.2,reviews:96,priceRange:100,hours:'11:00-21:00',distance:'0.3 กม.',tags:['บิงซู','ของหวาน'],discount:10,color:'#ec4899',img:'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600&q=80&auto=format&fit=crop',desc:'บิงซูและของหวานสดชื่น หลายไซรัปและท็อปปิ้งให้เลือก'},
+  {id:'r23',name:'ไม่ตกไม่แตก ศาลายา',emoji:'🍳',cuisine:'ตามสั่ง',lat:13.7932,lng:100.3272,rating:4.4,reviews:457,priceRange:80,hours:'09:00-17:00',distance:'0.3 กม.',tags:['ตามสั่ง','จานเดียว','อาทิตย์ 24ชม.'],discount:8,color:'#f59e0b',desc:'ร้านอาหารตามสั่งยอดนิยมหน้ามหิดล อาทิตย์เปิด 24 ชม. เมนูเยอะ ราคานักศึกษา'},
+  {id:'r24',name:'Nobu Shabu & Sushi',emoji:'🍣',cuisine:'ญี่ปุ่น',lat:13.7948,lng:100.3235,rating:4.5,reviews:389,priceRange:369,hours:'12:00-21:15',distance:'0.2 กม.',tags:['ชาบู','ซูชิ','บุฟเฟ่ต์'],discount:15,color:'#7c3aed',desc:'บุฟเฟ่ต์ชาบู+ซูชิ ตรงข้ามมหิดลประตู 2 เนื้อหมูสดสะอาด มีซูชิหลายรายการ จอดรถหน้าร้าน'},
+  {id:'r25',name:'ก๋วยเตี๋ยวลูกชิ้นปลานายเงี๊ยบ',emoji:'🐟',cuisine:'ไทย',lat:13.7925,lng:100.3285,rating:4.6,reviews:612,priceRange:75,hours:'08:00-17:00',distance:'0.4 กม.',tags:['ก๋วยเตี๋ยว','ลูกชิ้นปลา','Michelin'],discount:8,color:'#0ea5e9',desc:'ร้านดังการันตี Michelin Guide ลูกชิ้นปลาเด็ด เส้นปลาแห้งยำจัดเต็ม ร้านใหญ่ จอดสะดวก'},
+  {id:'r26',name:'Patta x The Backyard',emoji:'🍝',cuisine:'ฟิวชั่น',lat:13.7918,lng:100.3265,rating:4.5,reviews:178,priceRange:220,hours:'16:00-24:00',distance:'0.3 กม.',tags:['พาสต้า','ติดแกรม','ราคาดี'],discount:12,color:'#dc2626',desc:'ร้านพาสต้าลับๆ ซอย 9 ตรงข้ามมหิดล เส้นพาสต้าดี บรรยากาศติดแกรม ราคาไม่แรง'},
+  {id:'r27',name:'กับข้าว ชาวประมง',emoji:'🦀',cuisine:'ซีฟู้ด',lat:13.7905,lng:100.3295,rating:4.5,reviews:243,priceRange:150,hours:'10:00-21:00',distance:'0.5 กม.',tags:['ซีฟู้ด','กะเพรากั้ง','ทะเล'],discount:10,color:'#1e40af',desc:'ซีฟู้ดถนนเลียบคลองทวีวัฒนา ซิกเนเจอร์ "กะเพรากั้ง" กะเพรากุ้งตะกาด ก้ามอ่อนปู'},
+  {id:'r28',name:'See Yours Coffee & Dessert',emoji:'☕',cuisine:'คาเฟ่',lat:13.7960,lng:100.3228,rating:4.4,reviews:156,priceRange:140,hours:'08:00-20:00',distance:'0.3 กม.',tags:['กาแฟ','ของหวาน','นั่งชิล'],discount:12,color:'#0d9488',desc:'คาเฟ่และ dessert bar ในมหิดลศาลายา กาแฟดี ของหวานน่ารัก เหมาะนั่งทำงาน'},
+  {id:'r29',name:'ร้านลับบ้านศรีนวล',emoji:'🌶️',cuisine:'อีสาน',lat:13.7898,lng:100.3270,rating:4.6,reviews:134,priceRange:160,hours:'16:00-23:00',distance:'0.6 กม.',tags:['ส้มตำ','ร้านลับ','คนพื้นที่'],discount:10,color:'#ea580c',desc:'ร้านลับตรงข้ามวัดสุวรรณาราม คนพื้นที่รู้จัก ส้มตำแซ่บ บรรยากาศบ้านๆ แนะนำช่วงเย็น-ดึก'},
+  {id:'r30',name:'บุญตงกี่ ข้าวมันไก่',emoji:'🍗',cuisine:'ไทย',lat:13.7938,lng:100.3252,rating:4.4,reviews:298,priceRange:60,hours:'07:00-15:00',distance:'0.2 กม.',tags:['ข้าวมันไก่','เจ้าเก่า','ราคาถูก'],discount:8,color:'#65a30d',desc:'ข้าวมันไก่เจ้าเก่าหน้ามหิดล เนื้อไก่นุ่ม น้ำจิ้มเด็ด ราคานักศึกษา'},
+  {id:'r31',name:'ตำมั่ว ศาลายา',emoji:'🥗',cuisine:'อีสาน',lat:13.7922,lng:100.3288,rating:4.3,reviews:367,priceRange:150,hours:'10:30-21:30',distance:'0.4 กม.',tags:['ส้มตำ','อีสาน','แฟรนไชส์'],discount:10,color:'#dc2626',desc:'ร้านอีสานแฟรนไชส์ดัง ส้มตำหลากหลาย ไก่ย่าง คอหมูย่าง บรรยากาศสะอาด'},
+  {id:'r32',name:'MK Restaurant ศาลายา',emoji:'🍲',cuisine:'สุกี้',lat:13.7950,lng:100.3240,rating:4.2,reviews:445,priceRange:300,hours:'10:00-22:00',distance:'0.2 กม.',tags:['สุกี้','ครอบครัว','เป็ดย่าง'],discount:10,color:'#16a34a',desc:'สุกี้ MK สาขาศาลายา เป็ดย่างเด็ด น้ำจิ้มสุกี้สูตรเฉพาะ เหมาะมาเป็นครอบครัว'},
+  {id:'r33',name:'ส้มตำเจ๊ไฝ ศาลายา',emoji:'🌶️',cuisine:'อีสาน',lat:13.7915,lng:100.3278,rating:4.5,reviews:289,priceRange:90,hours:'10:00-20:00',distance:'0.3 กม.',tags:['ส้มตำ','ปูปลาร้า','แซ่บ'],discount:8,color:'#ea580c',desc:'ส้มตำปูปลาร้ารสจัด ไก่ย่างหอม คอหมูย่างนุ่ม ราคาเป็นกันเอง'},
+  {id:'r34',name:'Café Amazon ม.มหิดล',emoji:'☕',cuisine:'คาเฟ่',lat:13.7944,lng:100.3248,rating:4.0,reviews:534,priceRange:70,hours:'06:30-19:00',distance:'0.0 กม.',tags:['กาแฟ','ในม.','สะดวก'],discount:5,color:'#15803d',desc:'คาเฟ่ Amazon ในมหาวิทยาลัยมหิดล กาแฟราคามาตรฐาน เปิดเช้า เหมาะก่อนเข้าเรียน'},
+  {id:'r35',name:'ข้าวขาหมูตรอกซุง',emoji:'🍖',cuisine:'ไทย',lat:13.7930,lng:100.3268,rating:4.5,reviews:412,priceRange:60,hours:'07:00-14:00',distance:'0.3 กม.',tags:['ขาหมู','เจ้าเก่า','เช้า'],discount:8,color:'#92400e',desc:'ข้าวขาหมูเจ้าเก่า หนังนุ่ม เนื้อเปื่อย น้ำราดเข้มข้น ขายเฉพาะช่วงเช้า-บ่าย'},
+  {id:'r36',name:'Sushi Den ศาลายา',emoji:'🍱',cuisine:'ญี่ปุ่น',lat:13.7956,lng:100.3232,rating:4.4,reviews:201,priceRange:250,hours:'11:00-21:00',distance:'0.3 กม.',tags:['ซูชิ','ญี่ปุ่น','คุ้ม'],discount:12,color:'#7c3aed',desc:'ร้านซูชิราคาเข้าถึงได้ ปลาสดใหม่ เซ็ตคุ้ม นักศึกษ ามหิดลแวะบ่อย'},
+  {id:'r37',name:'หมูกระทะแซ่บเวอร์',emoji:'🥓',cuisine:'หมูกระทะ',lat:13.7910,lng:100.3290,rating:4.2,reviews:356,priceRange:199,hours:'16:00-23:00',distance:'0.5 กม.',tags:['หมูกระทะ','บุฟเฟ่ต์','กลุ่ม'],discount:12,color:'#dc2626',desc:'หมูกระทะบุฟเฟ่ต์ 199 บาท หมูหมัก น้ำจิ้มเด็ด เหมาะมากันเป็นกลุ่มใหญ่'},
+  {id:'r38',name:'ก๋วยจั๊บญวนศาลายา',emoji:'🍜',cuisine:'เวียดนาม',lat:13.7926,lng:100.3260,rating:4.4,reviews:178,priceRange:60,hours:'08:00-16:00',distance:'0.2 กม.',tags:['ก๋วยจั๊บญวน','เวียดนาม','เช้า'],discount:8,color:'#0891b2',desc:'ก๋วยจั๊บญวนน้ำใส เครื่องแน่น หมูยอหอม ไข่ลวก เหมาะมื้อเช้า-กลางวัน'},
+  {id:'r39',name:'Bonchon ศาลายา',emoji:'🍗',cuisine:'เกาหลี',lat:13.7948,lng:100.3238,rating:4.3,reviews:267,priceRange:200,hours:'11:00-21:00',distance:'0.2 กม.',tags:['ไก่ทอด','เกาหลี','ซอส'],discount:10,color:'#dc2626',desc:'ไก่ทอดเกาหลี Bonchon ซอสโซยาการ์ลิคและสไปซี่ กรอบนอกนุ่มใน'},
+  {id:'r40',name:'ข้าวต้มเป็ดเจ้าท่า',emoji:'🦆',cuisine:'จีน',lat:13.7920,lng:100.3275,rating:4.5,reviews:323,priceRange:80,hours:'16:00-01:00',distance:'0.4 กม.',tags:['ข้าวต้ม','เป็ด','รอบดึก'],discount:8,color:'#92400e',desc:'ข้าวต้มเป็ดรอบดึก น้ำซุปเป็ดหวานหอม เป็ดนุ่ม เหมาะคนหิวค่ำคืน'},
+  {id:'r41',name:'After You ศาลายา',emoji:'🍰',cuisine:'ของหวาน',lat:13.7952,lng:100.3236,rating:4.5,reviews:312,priceRange:180,hours:'11:00-21:00',distance:'0.3 กม.',tags:['ของหวาน','ชิบูย่า','คาเฟ่'],discount:10,color:'#ec4899',desc:'ร้านของหวานชื่อดัง ชิบูย่าโทสต์ ฮันนีโทสต์ น้ำแข็งไส บรรยากาศน่ารัก'},
+  {id:'r42',name:'ลาบเป็ดอุดร ศาลายา',emoji:'🦆',cuisine:'อีสาน',lat:13.7912,lng:100.3282,rating:4.4,reviews:198,priceRange:120,hours:'10:00-21:00',distance:'0.4 กม.',tags:['ลาบเป็ด','อีสาน','แซ่บ'],discount:10,color:'#ea580c',desc:'ลาบเป็ดสูตรอุดร รสจัดจ้าน เป็ดสด น้ำตกเด็ด ข้าวเหนียวร้อนๆ'},
+  {id:'r43',name:'Starbucks Mahidol',emoji:'☕',cuisine:'คาเฟ่',lat:13.7946,lng:100.3244,rating:4.2,reviews:489,priceRange:160,hours:'07:00-20:00',distance:'0.1 กม.',tags:['กาแฟ','wifi','ทำงาน'],discount:0,color:'#15803d',desc:'Starbucks ในมหิดลศาลายา wifi แรง ที่นั่งเยอะ เหมาะอ่านหนังสือ-ทำงานกลุ่ม'},
+  {id:'r44',name:'ผัดไทยประตูผี ศาลายา',emoji:'🍝',cuisine:'ไทย',lat:13.7928,lng:100.3266,rating:4.4,reviews:256,priceRange:70,hours:'11:00-21:00',distance:'0.3 กม.',tags:['ผัดไทย','กุ้งสด','เจ้าดัง'],discount:8,color:'#f97316',desc:'ผัดไทยกุ้งสดสูตรประตูผี เส้นเหนียวนุ่ม รสกลมกล่อม กุ้งตัวใหญ่'},
+  {id:'r45',name:'ตี๋น้อย ศาลายา',emoji:'🍲',cuisine:'สุกี้',lat:13.7954,lng:100.3242,rating:4.3,reviews:578,priceRange:219,hours:'16:00-05:00',distance:'0.3 กม.',tags:['สุกี้','บุฟเฟ่ต์','ดึก'],discount:10,color:'#16a34a',desc:'สุกี้ตี๋น้อยบุฟเฟ่ต์ 219 บาท เปิดถึงตี 5 น้ำจิ้มเด็ด ของสดเยอะ เหมาะสายดึก'},
+  {id:'r46',name:'ขนมจีนน้ำยาป้านวล',emoji:'🍜',cuisine:'ไทย',lat:13.7916,lng:100.3272,rating:4.5,reviews:189,priceRange:50,hours:'07:00-14:00',distance:'0.3 กม.',tags:['ขนมจีน','น้ำยา','เช้า'],discount:8,color:'#fb923c',desc:'ขนมจีนน้ำยาปลาช่อน น้ำพริก แกงเขียวหวาน ผักสดเยอะ ราคาประหยัด'},
+  {id:'r47',name:'Pizza Company ศาลายา',emoji:'🍕',cuisine:'อิตาเลียน',lat:13.7950,lng:100.3234,rating:4.1,reviews:334,priceRange:280,hours:'10:00-22:00',distance:'0.3 กม.',tags:['พิซซ่า','พาสต้า','กลุ่ม'],discount:15,color:'#dc2626',desc:'พิซซ่าคอมพานีสาขาศาลายา หน้าหนาๆ ชีสเยิ้ม มีโปรนักศึกษา เหมาะมาเป็นกลุ่ม'},
+  {id:'r48',name:'ก๋วยเตี๋ยวต้มยำเรือทอง',emoji:'🍲',cuisine:'ไทย',lat:13.7924,lng:100.3270,rating:4.4,reviews:212,priceRange:55,hours:'09:00-19:00',distance:'0.2 กม.',tags:['ต้มยำ','ก๋วยเตี๋ยว','น้ำข้น'],discount:8,color:'#f97316',desc:'ก๋วยเตี๋ยวต้มยำน้ำข้น รสจัด เครื่องแน่น หมูสับ-ลูกชิ้นเด้ง ถั่วป่นหอม'},
+  {id:'r49',name:'Tea Story ศาลายา',emoji:'🧋',cuisine:'เครื่องดื่ม',lat:13.7940,lng:100.3256,rating:4.3,reviews:167,priceRange:60,hours:'10:00-21:00',distance:'0.2 กม.',tags:['ชานม','ไข่มุก','หวาน'],discount:10,color:'#a855f7',desc:'ร้านชานมไข่มุก ชาหอม ไข่มุกหนึบ ปรับหวานได้ ราคานักศึกษา'},
+  {id:'r50',name:'ครัวคุณยาย ศาลายา',emoji:'🍛',cuisine:'ไทย',lat:13.7908,lng:100.3268,rating:4.6,reviews:278,priceRange:120,hours:'10:00-20:00',distance:'0.5 กม.',tags:['อาหารไทย','โบราณ','บ้านๆ'],discount:10,color:'#16a34a',desc:'อาหารไทยโบราณสูตรคุณยาย แกงเลียง น้ำพริกปลาทู ผัดสะตอ รสชาติบ้านๆ อบอุ่น'},
+];
+
+const SAMPLE_REVIEWS={
+  r1:[
+    {name:'Nuch P.',stars:5,date:'15 เม.ย.',text:'อาหารอร่อยมาก บรรยากาศดี ต้นไม้ร่มรื่น เหมาะนั่งฟังดนตรี'},
+    {name:'Mark S.',stars:4,date:'8 เม.ย.',text:'พิซซ่ารสไทยไปนิด แต่อาหารไทยเด็ดมาก พนักงานน่ารัก'},
+  ],
+  r2:[
+    {name:'Apinya K.',stars:5,date:'20 เม.ย.',text:'ร้านสวยมาก อาหารคุณภาพ ไวน์เลือกได้หลากหลาย คุ้มค่า'},
+    {name:'David L.',stars:5,date:'12 เม.ย.',text:'ของหวานเด็ด สเต็กเซตคุ้มค่ามาก'},
+  ],
+  r3:[{name:'Ploy M.',stars:4,date:'25 เม.ย.',text:'นมสดอร่อย ขนมปังถ่านหอม ครีมหวานไปนิด'}],
+  r4:[
+    {name:'Tom N.',stars:5,date:'18 เม.ย.',text:'บุฟเฟ่ต์คุ้มมาก 350 กินจุได้ พอร์คเชียลโดดเด่น'},
+    {name:'Wan T.',stars:4,date:'5 เม.ย.',text:'อาหารอร่อย แต่บานชันธรรมดาไป'},
+  ],
+  r5:[{name:'Pae R.',stars:5,date:'22 เม.ย.',text:'ราเมงน้ำซุปเข้มข้น เปิดดึกช่วยติว ขอบคุณครับ'}],
+  r9:[
+    {name:'นักศึกษา',stars:5,date:'28 เม.ย.',text:'ไข่เต่ามันม่วงเด็ด แป้งกรอบ ข้างในนุ่ม หวานธรรมชาติ'},
+    {name:'Tukta',stars:5,date:'20 เม.ย.',text:'ลูกใหญ่ คุ้มมาก ติดใจมาบ่อยๆ'},
+  ],
+  r10:[{name:'Pae',stars:5,date:'30 เม.ย.',text:'ชามละ 25 บาท น้ำซุปเข้มข้น คุ้มสุดๆ'}],
+};
+
+const REWARDS=[
+  // Restaurants
+  {id:'rw_r1',cat:'food',icon:'🎵',name:'ส่วนลด 15% ที่ Music Square',desc:'ม.มหิดล ศาลายา · พันธมิตร MotoGuide',cost:350,color:'#d1fae5',discount:15,partnerName:'Music Square'},
+  {id:'rw_r2',cat:'food',icon:'🍷',name:'ส่วนลด 20% ที่ Anya\'s Place',desc:'ฟิวชั่น พุทธมณฑล · พันธมิตร MotoGuide',cost:600,color:'#fef3c7',discount:20,partnerName:"Anya's Place"},
+  {id:'rw_r3',cat:'food',icon:'🥛',name:'ฟรีเครื่องดื่ม MotherCows',desc:'แก้วแรกฟรี · พันธมิตร MotoGuide',cost:250,color:'#fef3c7',discount:100,partnerName:'MotherCows Salaya',freeText:'ฟรี!'},
+  {id:'rw_r4',cat:'food',icon:'🥩',name:'ส่วนลด 15% Korae Korean BBQ',desc:'บุฟเฟ่ต์เกาหลี · พันธมิตร MotoGuide',cost:300,color:'#fee2e2',discount:15,partnerName:'Korae Korean BBQ'},
+  {id:'rw_r5',cat:'food',icon:'🍜',name:'ส่วนลด 12% Santoku Ramen',desc:'ราเมงญี่ปุ่น · พันธมิตร MotoGuide',cost:180,color:'#ede9fe',discount:12,partnerName:'Santoku Ramen'},
+  {id:'rw_r6',cat:'food',icon:'🍗',name:'ส่วนลด 10% Tianti Chicken Rice',desc:'ข้าวมันไก่สุขภาพดี · พันธมิตร MotoGuide',cost:120,color:'#dcfce7',discount:10,partnerName:'Tianti Chicken Rice'},
+  {id:'rw_r7',cat:'food',icon:'🍲',name:'ส่วนลด 12% โกวเล็กสุกี้',desc:'สุกี้ฮ่องกง · พันธมิตร MotoGuide',cost:150,color:'#fce7f3',discount:12,partnerName:'โกวเล็กสุกี้ฮ่องกง'},
+  {id:'rw_r8',cat:'food',icon:'🥧',name:'ขนมไข่เต่ามันม่วง ฟรี 1 ลูก',desc:'หน้า ม.มหิดล · พันธมิตร MotoGuide',cost:80,color:'#f3e8ff',discount:100,partnerName:'มันม่วงขนมไข่เต่า',freeText:'ฟรี!'},
+  {id:'rw_r9',cat:'food',icon:'🍜',name:'ก๋วยเตี๋ยวเรือศาลายา ฟรี 1 ชาม',desc:'ซื้อ 50.- รับฟรี · พันธมิตร',cost:100,color:'#fed7aa',discount:100,partnerName:'ก๋วยเตี๋ยวเรือศาลายา',freeText:'ฟรี!'},
+  {id:'rw_r10',cat:'food',icon:'☕',name:'ส่วนลด 12% Little Tree Grocery',desc:'คาเฟ่บ้านไม้ · พันธมิตร MotoGuide',cost:200,color:'#fed7aa',discount:12,partnerName:'Little Tree Grocery'},
+  // Safety
+  {id:'rw_s1',cat:'safety',icon:'🛡️',name:'ส่วนลดประกันภัยจาก Thai Life',desc:'รับส่วนลด 15%',cost:1000,color:'#dbeafe',discount:15,partnerName:'Thai Life Insurance'},
+  {id:'rw_s2',cat:'safety',icon:'🪖',name:'ส่วนลดอุปกรณ์ความปลอดภัย',desc:'ใช้กับร้านพันธมิตร',cost:500,color:'#fee2e2',discount:20,partnerName:'Helmet Plus'},
+  {id:'rw_s3',cat:'safety',icon:'🦺',name:'เสื้อสะท้อนแสงสำหรับขี่กลางคืน',desc:'แบรนด์มาตรฐาน',cost:400,color:'#fed7aa',discount:30,partnerName:'SafetyGear TH'},
+  // Other
+  {id:'rw_o1',cat:'other',icon:'⛽',name:'คูปองส่วนลดน้ำมัน 50 บาท',desc:'ใช้ได้ทุกปั๊ม',cost:200,color:'#fef3c7',discount:50,partnerName:'Bangchak'},
+  {id:'rw_o2',cat:'other',icon:'☕',name:'คูปองเครื่องดื่ม Cafe Amazon',desc:'มูลค่า 80 บาท',cost:150,color:'#fef3c7',discount:80,partnerName:'Cafe Amazon'},
+  {id:'rw_o3',cat:'other',icon:'🎁',name:'ลุ้นรับ iPhone 16 Pro',desc:'ส่งสลากลุ้นรางวัล',cost:50,color:'#ede9fe',discount:0,partnerName:'MotoGuard',freeText:'ลุ้น!'},
+];
+
+const MISSIONS=[
+  {id:'helmet',icon:'🪖',text:'ส่งภาพสวมหมวกกันน็อก',points:100,label:'Add',cls:'add'},
+  {id:'quiz',icon:'❓',text:'แบบทดสอบขับขี่ปลอดภัย',points:50,label:'Start',cls:'start'},
+  {id:'register',icon:'🎓',text:'ลงทะเบียนอบรมความปลอดภัย',points:200,label:'Register',cls:'register'},
+  {id:'speed-check',icon:'🏍️',text:'ตรวจสอบความเร็วในเส้นทางประจำ',points:30,label:'Start',cls:'start'},
+  {id:'survey',icon:'📋',text:'ทำแบบประเมินความเข้าใจกฎจราจร',points:80,label:'Start',cls:'start'},
+  {id:'report5',icon:'📍',text:'รายงานจุดเสี่ยง 5 จุด',points:150,label:'Check',cls:'start'},
+  {id:'review',icon:'⭐',text:'รีวิวร้านอาหารใน MotoGuide',points:60,label:'Go',cls:'start'},
+];
+
+// ============ FIREBASE + AUTH + STORAGE ============
+const FB_CONFIG={
+  apiKey:"AIzaSyAXzD3zkKoWxZgXm_jbU8XMyv_Dmx-SkXA",
+  authDomain:"motoguard-344b6.firebaseapp.com",
+  databaseURL:"https://motoguard-344b6-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"motoguard-344b6",
+  storageBucket:"motoguard-344b6.firebasestorage.app",
+  messagingSenderId:"323726069357",
+  appId:"1:323726069357:web:935ab77b69f1b7d38f3964"
+};
+const FB_CONFIG_KEY='motoguard:fb_config';
+const AUTH_MODE_KEY='motoguard:auth_mode';
+const DEMO_USER_KEY='motoguard:demo_user';
+
+let fbApp=null,fbAuth=null,fbDb=null;
+let currentUser=null;
+let isFirebaseMode=false;     // user is logged in with email/password
+let firebaseConnected=false;  // Firebase is initialized — shared data syncs even without login
+let knownReportIds=new Set();
+let lastSeenAccidentTime=0;
+let lastAccidentReport=null;
+let unsubReports=null;
+
+// Storage abstraction:
+// - SHARED data (reports, reviews) → Firebase if connected (everyone sees same), else localStorage
+// - PRIVATE user data (points, missions) → Firebase if logged in, else localStorage per user
+const Store={
+  async getReports(){
+    if(firebaseConnected){
+      return new Promise(res=>{fbDb.ref('reports').once('value',s=>{const v=s.val()||{};res(Object.values(v))}).catch(()=>res([]))});
+    }
+    try{const r=localStorage.getItem('mg:reports');return r?JSON.parse(r):[]}catch{return[]}
+  },
+  async addReport(r){
+    if(firebaseConnected)return fbDb.ref('reports/'+r.id).set(r);
+    const all=await this.getReports();all.push(r);
+    localStorage.setItem('mg:reports',JSON.stringify(all));
+    try{bc.postMessage({type:'reports-updated'})}catch{}
+  },
+  async getReviews(){
+    if(firebaseConnected){
+      return new Promise(res=>{fbDb.ref('reviews').once('value',s=>res(s.val()||{})).catch(()=>res({}))});
+    }
+    try{const r=localStorage.getItem('mg:reviews');return r?JSON.parse(r):{}}catch{return{}}
+  },
+  async addReview(rid,rv){
+    if(firebaseConnected)return fbDb.ref('reviews/'+rid).push(rv);
+    const all=await this.getReviews();
+    if(!all[rid])all[rid]=[];
+    all[rid].unshift(rv);
+    localStorage.setItem('mg:reviews',JSON.stringify(all));
+  },
+  async getUserData(){
+    const uid=currentUser?.uid||'demo';
+    if(isFirebaseMode){
+      return new Promise(res=>{fbDb.ref('users/'+uid).once('value',s=>res(s.val()||{})).catch(()=>res({}))});
+    }
+    try{const r=localStorage.getItem('mg:user:'+uid);return r?JSON.parse(r):{}}catch{return{}}
+  },
+  async setUserData(d){
+    const uid=currentUser?.uid||'demo';
+    if(isFirebaseMode)return fbDb.ref('users/'+uid).update(d);
+    const cur=await this.getUserData();
+    localStorage.setItem('mg:user:'+uid,JSON.stringify({...cur,...d}));
+  },
+  listenReports(cb){
+    if(unsubReports){try{unsubReports()}catch{}}
+    if(firebaseConnected){
+      const ref=fbDb.ref('reports');
+      const h=ref.on('value',s=>{const v=s.val()||{};cb(Object.values(v))});
+      unsubReports=()=>ref.off('value',h);
+    }else{
+      const h=async()=>{cb(await this.getReports())};
+      bc.addEventListener('message',e=>{if(e.data?.type==='reports-updated')h()});
+      window.addEventListener('storage',e=>{if(e.key==='mg:reports')h()});
+      unsubReports=()=>{};
+    }
+  },
+};
+
+// Cross-tab broadcast for demo mode
+const bc=typeof BroadcastChannel!=='undefined'?new BroadcastChannel('motoguard'):{addEventListener(){},postMessage(){}};
+
+// ---------- AUTH FUNCTIONS ----------
+function switchAuthTab(tab){
+  document.getElementById('tab-signin').classList.toggle('active',tab==='signin');
+  document.getElementById('tab-signup').classList.toggle('active',tab==='signup');
+  document.getElementById('auth-form-signin').style.display=tab==='signin'?'':'none';
+  document.getElementById('auth-form-signup').style.display=tab==='signup'?'':'none';
+  document.getElementById('auth-error').classList.remove('show');
+}
+function showAuthError(m){const e=document.getElementById('auth-error');e.textContent=m;e.classList.add('show')}
+
+function tryInitFirebase(){
+  // Use hardcoded config if available, else fallback to stored config
+  let cfg=FB_CONFIG;
+  if(!cfg||!cfg.apiKey){
+    const s=localStorage.getItem(FB_CONFIG_KEY);
+    if(!s){firebaseConnected=false;return false}
+    try{cfg=JSON.parse(s)}catch{firebaseConnected=false;return false}
+  }
+  try{
+    if(fbApp){try{fbApp.delete()}catch{}}
+    fbApp=firebase.initializeApp(cfg);
+    fbAuth=firebase.auth();
+    fbDb=firebase.database();
+    firebaseConnected=true;
+    return true;
+  }catch(e){console.error('FB init',e);firebaseConnected=false;return false}
+}
+
+async function doSignIn(){
+  const email=document.getElementById('signin-email').value.trim();
+  const pwd=document.getElementById('signin-password').value;
+  if(!email||!pwd){showAuthError('กรอกอีเมลและรหัสผ่าน');return}
+  if(!fbAuth&&!tryInitFirebase()){showAuthError('ขณะนี้ระบบไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่');return}
+  const btn=document.getElementById('signin-btn');btn.disabled=true;btn.textContent='กำลังเข้าสู่ระบบ...';
+  try{
+    const r=await fbAuth.signInWithEmailAndPassword(email,pwd);
+    onSignedIn({uid:r.user.uid,email:r.user.email,displayName:r.user.displayName||email.split('@')[0],mode:'firebase'});
+  }catch(e){showAuthError(translateAuthError(e.code)||e.message)}
+  btn.disabled=false;btn.innerHTML='🔐 เข้าสู่ระบบ';
+}
+
+async function doSignUp(){
+  const name=document.getElementById('signup-name').value.trim();
+  const email=document.getElementById('signup-email').value.trim();
+  const pwd=document.getElementById('signup-password').value;
+  if(!name||!email||!pwd){showAuthError('กรอกข้อมูลให้ครบ');return}
+  if(pwd.length<6){showAuthError('รหัสผ่านต้องอย่างน้อย 6 ตัว');return}
+  if(!fbAuth&&!tryInitFirebase()){showAuthError('ขณะนี้ระบบไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่');return}
+  const btn=document.getElementById('signup-btn');btn.disabled=true;btn.textContent='กำลังสมัคร...';
+  try{
+    const r=await fbAuth.createUserWithEmailAndPassword(email,pwd);
+    await r.user.updateProfile({displayName:name});
+    await fbDb.ref('users/'+r.user.uid).set({displayName:name,email,points:99,createdAt:Date.now()});
+    onSignedIn({uid:r.user.uid,email,displayName:name,mode:'firebase'});
+  }catch(e){showAuthError(translateAuthError(e.code)||e.message)}
+  btn.disabled=false;btn.innerHTML='✨ สมัครและเข้าสู่ระบบ';
+}
+
+function doDemoMode(){
+  let u=localStorage.getItem(DEMO_USER_KEY);
+  if(!u){
+    const name=prompt('ตั้งชื่อสำหรับ Demo:','คุณสมชาย')||'Demo User';
+    u=JSON.stringify({uid:'demo_'+Date.now().toString(36),displayName:name,email:'demo@local'});
+    localStorage.setItem(DEMO_USER_KEY,u);
+  }
+  onSignedIn({...JSON.parse(u),mode:'demo'});
+}
+
+async function doSignOut(){
+  if(!confirm('ออกจากระบบ? ข้อมูลจะกลับสู่โหมด Demo'))return;
+  if(unsubReports){try{unsubReports()}catch{}unsubReports=null}
+  if(fbAuth&&isFirebaseMode){try{await fbAuth.signOut()}catch{}}
+  localStorage.removeItem(AUTH_MODE_KEY);
+  isFirebaseMode=false;
+  // Switch back to demo user
+  startAsDemo();
+  showToast('ออกจากระบบ — กลับสู่โหมด Demo');
+}
+
+function closeAuthOverlay(){
+  document.getElementById('auth-overlay').classList.remove('show');
+}
+
+function openAuthOverlay(){
+  document.getElementById('auth-overlay').classList.add('show');
+}
+
+function translateAuthError(c){
+  return{'auth/invalid-email':'อีเมลไม่ถูกต้อง','auth/user-not-found':'ไม่พบบัญชี — โปรดสมัครก่อน','auth/wrong-password':'รหัสผ่านไม่ถูกต้อง','auth/invalid-credential':'อีเมลหรือรหัสผ่านไม่ถูกต้อง','auth/email-already-in-use':'อีเมลนี้ถูกใช้แล้ว','auth/weak-password':'รหัสผ่านอ่อนเกินไป','auth/network-request-failed':'การเชื่อมต่อล้มเหลว'}[c];
+}
+
+async function onSignedIn(user){
+  // Disconnect previous listeners
+  if(unsubReports){try{unsubReports()}catch{}unsubReports=null}
+  currentUser=user;
+  isFirebaseMode=user.mode==='firebase';
+  localStorage.setItem(AUTH_MODE_KEY,user.mode);
+  document.getElementById('auth-overlay').classList.remove('show');
+  await loadData();
+  await purgeTestReports();
+  Store.listenReports(handleReportsUpdate);
+  refreshHeatmap();refreshDashMap();renderNotifications();renderDashboard();
+  navigate('home');
+  showToast(`ยินดีต้อนรับ ${user.displayName}!`);
+}
+
+// ---------- ACCIDENT REAL-TIME ALERT ----------
+function handleReportsUpdate(reports){
+  allReports=reports;
+  userReportCount=allReports.filter(r=>r.userId===currentUser?.uid).length;
+  refreshHeatmap();refreshDashMap();renderNotifications();renderDashboard();updateAllDisplays();
+  reports.forEach(r=>{
+    if(!knownReportIds.has(r.id)){
+      knownReportIds.add(r.id);
+      if(r.type==='accident'&&r.createdAt>lastSeenAccidentTime&&r.userId!==currentUser?.uid){
+        triggerAccidentAlert(r);
+      }
+    }
+  });
+}
+
+function triggerAccidentAlert(r){
+  lastAccidentReport=r;
+  const who=r.userName||'ผู้ใช้คนหนึ่ง';
+  document.getElementById('accident-alert-body').innerHTML=
+    `<b>${escapeHtml(who)}</b> รายงาน <b>${escapeHtml(r.category)}</b><br>📍 ${r.lat.toFixed(4)}, ${r.lng.toFixed(4)} · Risk ${r.risk}/10<br>${r.notes?'💬 '+escapeHtml(r.notes)+'<br>':''}${reportVisual(r,120)}`;
+  document.getElementById('accident-alert').classList.add('show');
+  if('Notification' in window&&Notification.permission==='granted'){
+    try{new Notification('🚨 อุบัติเหตุใหม่ใกล้คุณ!',{body:`${r.category} · Risk ${r.risk}/10`,tag:'mg-acc'})}catch{}
+  }
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.frequency.value=800;
+    g.gain.setValueAtTime(0.15,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);
+    o.start();o.stop(ctx.currentTime+0.6);
+  }catch{}
+  clearTimeout(window._aTm);window._aTm=setTimeout(closeAccidentAlert,12000);
+}
+function closeAccidentAlert(){document.getElementById('accident-alert').classList.remove('show')}
+function viewAccidentOnMap(){
+  if(!lastAccidentReport)return;
+  closeAccidentAlert();navigate('home');
+  setTimeout(()=>{if(mainMap){mainMap.setView([lastAccidentReport.lat,lastAccidentReport.lng],15);L.popup().setLatLng([lastAccidentReport.lat,lastAccidentReport.lng]).setContent(`<b>🚨 ${lastAccidentReport.category}</b><br>Risk ${lastAccidentReport.risk}/10<br>${lastAccidentReport.notes||''}`).openOn(mainMap)}},400);
+}
+async function requestNotificationPermission(){
+  if(!('Notification' in window)){showToast('เบราว์เซอร์ไม่รองรับ','error');return}
+  if(Notification.permission==='granted'){showToast('✓ เปิดอยู่แล้ว');return}
+  const p=await Notification.requestPermission();
+  if(p==='granted'){showToast('✓ เปิดการแจ้งเตือนแล้ว');try{new Notification('🛡️ MotoGuard',{body:'การแจ้งเตือนเปิดใช้งาน!'})}catch{}}
+  else showToast('ไม่ได้รับอนุญาต','warn');
+}
+
+// ============ DATA LOAD ============
+async function loadData(){
+  let reports=await Store.getReports();
+  if(reports.length===0){
+    for(const r of SEED_REPORTS){
+      const rr={...r,createdAt:Date.now()-86400000*5,userId:'system',userName:'System'};
+      await Store.addReport(rr);
+    }
+    reports=await Store.getReports();
+  }
+  allReports=reports;
+  knownReportIds=new Set(reports.map(r=>r.id));
+  lastSeenAccidentTime=Date.now();
+  userReportCount=allReports.filter(r=>r.userId===currentUser?.uid).length;
+  let reviews=await Store.getReviews();
+  if(Object.keys(reviews).length===0){
+    for(const[k,arr]of Object.entries(SAMPLE_REVIEWS)){
+      for(const rv of arr){await Store.addReview(k,rv)}
+    }
+    reviews=await Store.getReviews();
+  }
+  allReviews={};
+  for(const k in reviews){
+    if(Array.isArray(reviews[k]))allReviews[k]=reviews[k];
+    else allReviews[k]=Object.values(reviews[k]);
+  }
+  const ud=await Store.getUserData();
+  userPoints=ud.points??99;
+  completedMissions=ud.missions||{};
+  bestScore=ud.bestScore||0;
+  redeemed=ud.redeemed||[];
+  updateAllDisplays();
+}
+
+async function saveUser(){
+  await Store.setUserData({points:userPoints,missions:completedMissions,bestScore,redeemed});
+  updateAllDisplays();
+}
+async function saveReports(){updateAllDisplays()}
+async function saveReviews(){}
+
+function updateAllDisplays(){
+  document.querySelectorAll('#hero-points,#rewards-points,#profile-points').forEach(el=>el.textContent=userPoints);
+  const hr=document.getElementById('hero-reports');if(hr)hr.textContent=userReportCount;
+  const bs=document.getElementById('best-score');if(bs)bs.textContent=bestScore;
+  const md=document.getElementById('missions-done');if(md)md.textContent=Object.keys(completedMissions).length;
+  // Server pill: Live = Firebase connected (any user), Offline = no Firebase
+  const statusLabel=firebaseConnected?(isFirebaseMode?'Live':'Live·Demo'):'Offline';
+  document.getElementById('server-status').textContent=`MotoServer · ${statusLabel} · ${allReports.length}`;
+
+  if(currentUser){
+    const dn=currentUser.displayName;
+    const u=document.getElementById('hero-name');if(u)u.textContent=dn;
+    const r=document.getElementById('rewards-name');if(r)r.textContent=dn;
+    const p=document.getElementById('profile-name');if(p)p.textContent=dn;
+    const initial=dn.charAt(0).toUpperCase();
+    const ra=document.getElementById('rewards-avatar');if(ra)ra.textContent=initial;
+    const pa=document.getElementById('profile-avatar');if(pa)pa.textContent=initial;
+  }
+
+  // Auth state UI
+  const banner=document.getElementById('demo-banner');
+  const emailEl=document.getElementById('profile-email-display');
+  const modeEl=document.getElementById('profile-mode-display');
+  const actIcon=document.getElementById('auth-action-icon');
+  const actText=document.getElementById('auth-action-text');
+  const actCard=document.getElementById('auth-action-card');
+
+  if(isFirebaseMode){
+    if(banner)banner.style.display='none';
+    if(emailEl)emailEl.textContent=currentUser?.email||'-';
+    if(modeEl)modeEl.textContent='☁️ Firebase (Live)';
+    if(actIcon)actIcon.textContent='🔓';
+    if(actText)actText.textContent='ออกจากระบบ (Sign Out)';
+    if(actCard)actCard.style.background='#fff';
+  }else{
+    if(banner)banner.style.display='block';
+    if(emailEl)emailEl.textContent='ยังไม่ได้เข้าสู่ระบบ';
+    if(modeEl)modeEl.textContent=firebaseConnected?'💻 Demo · Live sync':'💻 Demo · Offline';
+    if(actIcon)actIcon.textContent='🔐';
+    if(actText)actText.textContent='เข้าสู่ระบบ / สมัครสมาชิก';
+    if(actCard)actCard.style.background='linear-gradient(135deg,#dbeafe,#bfdbfe)';
+  }
+}
+
+function handleAuthAction(){
+  if(isFirebaseMode){
+    doSignOut();
+  }else{
+    openAuthOverlay();
+  }
+}
+
+// ============ NAVIGATION ============
+function navigate(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const t=document.getElementById('page-'+page);
+  if(t){t.classList.add('active');t.scrollTop=0}
+  document.querySelectorAll('.nav-item[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+  if(page==='home'){setTimeout(initMainMap,100);renderNotifications()}
+  if(page==='safe-rider')renderMissions();
+  if(page==='report-form'){setTimeout(initReportMap,100);initFormDefaults()}
+  if(page==='reports-list')renderReportsFeed();
+  if(page==='rewards')renderRewards();
+  if(page==='guide'){renderCuisineFilters();renderRestaurants()}
+  if(page==='dashboard'){setTimeout(initDashMap,100);renderDashboard()}
+}
+
+// ============ MAPS ============
+function initMainMap(){
+  const el=document.getElementById('heatmap');if(!el)return;
+  if(mainMap){mainMap.invalidateSize();refreshHeatmap();return}
+  mainMap=L.map(el,{center:[13.7945,100.3242],zoom:13,zoomControl:true,attributionControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(mainMap);
+  L.control.attribution({prefix:false}).addAttribution('© OpenStreetMap').addTo(mainMap);
+  refreshHeatmap();
+  setTimeout(()=>mainMap.invalidateSize(),200);
+}
+function refreshHeatmap(){
+  if(!mainMap)return;
+  if(heatLayer)mainMap.removeLayer(heatLayer);
+  const points=allReports.map(r=>[r.lat,r.lng,Math.max(0.4,r.risk/10)]);
+  heatLayer=L.heatLayer(points,{radius:35,blur:25,maxZoom:17,minOpacity:0.4,gradient:{0.2:'#22c55e',0.45:'#facc15',0.7:'#f97316',1.0:'#dc2626'}}).addTo(mainMap);
+  if(mainMap._markers)mainMap._markers.forEach(m=>mainMap.removeLayer(m));
+  mainMap._markers=[];
+  // Show ALL reports as clear colored dots
+  allReports.forEach(r=>{
+    const col=r.risk>=8?'#dc2626':r.risk>=5?'#f97316':'#22c55e';
+    const c=L.circleMarker([r.lat,r.lng],{radius:r.type==='accident'?9:7,fillColor:col,color:'#fff',weight:2.5,fillOpacity:0.95}).addTo(mainMap);
+    c.bindPopup(`<b>${r.type==='accident'?'🚨 อุบัติเหตุ':'⚠️ จุดเสี่ยง'}</b><br><b>${escapeHtml(r.category)}</b><br>ความเสี่ยง: ${r.risk}/10<br>${r.area?'พื้นที่: '+escapeHtml(r.area)+'<br>':''}${r.notes?escapeHtml(r.notes)+'<br>':''}${reportVisual(r,130)}<small>${r.date} ${r.time} · โดย ${escapeHtml(r.userName||'-')}</small>`,{maxWidth:230});
+    mainMap._markers.push(c);
+  });
+}
+function initReportMap(){
+  const el=document.getElementById('report-mini-map');if(!el)return;
+  if(reportMap){reportMap.invalidateSize();return}
+  reportMap=L.map(el,{center:[13.7945,100.3242],zoom:14,zoomControl:true,attributionControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(reportMap);
+  let marker=null;
+  reportMap.on('click',e=>{
+    pickedLocation=e.latlng;
+    document.getElementById('loc-coords').textContent=`📍 ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`;
+    if(marker)reportMap.removeLayer(marker);
+    marker=L.marker(e.latlng).addTo(reportMap);
+  });
+  setTimeout(()=>reportMap.invalidateSize(),150);
+}
+function useCurrentLocation(){
+  if(!navigator.geolocation){showToast('เบราว์เซอร์ไม่รองรับ GPS','error');return}
+  showToast('🔍 กำลังหาตำแหน่ง...');
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const{latitude,longitude}=pos.coords;
+    pickedLocation={lat:latitude,lng:longitude};
+    document.getElementById('loc-coords').textContent=`📍 ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    if(reportMap){reportMap.setView([latitude,longitude],16);L.marker([latitude,longitude]).addTo(reportMap)}
+    showToast('✓ ใช้ตำแหน่งปัจจุบัน');
+  },()=>showToast('ไม่สามารถใช้ GPS ได้','error'));
+}
+function initDashMap(){
+  const el=document.getElementById('dash-map');if(!el)return;
+  if(dashMap){dashMap.invalidateSize();refreshDashMap();return}
+  dashMap=L.map(el,{center:[13.7945,100.3242],zoom:13,zoomControl:true,attributionControl:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',{maxZoom:18}).addTo(dashMap);
+  refreshDashMap();
+  setTimeout(()=>dashMap.invalidateSize(),200);
+}
+function refreshDashMap(){
+  if(!dashMap)return;
+  if(dashHeatLayer)dashMap.removeLayer(dashHeatLayer);
+  const points=allReports.map(r=>[r.lat,r.lng,Math.max(0.5,r.risk/10)]);
+  dashHeatLayer=L.heatLayer(points,{radius:32,blur:20,maxZoom:17,minOpacity:0.45,gradient:{0.2:'#22c55e',0.45:'#facc15',0.7:'#f97316',1.0:'#dc2626'}}).addTo(dashMap);
+  if(dashMap._mk)dashMap._mk.forEach(m=>dashMap.removeLayer(m));
+  dashMap._mk=[];
+  allReports.forEach(r=>{
+    const col=r.risk>=8?'#dc2626':r.risk>=5?'#f97316':'#22c55e';
+    const c=L.circleMarker([r.lat,r.lng],{radius:r.type==='accident'?8:6,fillColor:col,color:'#fff',weight:2,fillOpacity:0.95}).addTo(dashMap);
+    c.bindPopup(`<b>${r.type==='accident'?'🚨':'⚠️'} ${escapeHtml(r.category)}</b><br>Risk ${r.risk}/10<br>${reportVisual(r,110)}<small>${r.date} ${r.time}</small>`,{maxWidth:210});
+    dashMap._mk.push(c);
+  });
+}
+
+// ============ NOTIFICATIONS ============
+function renderNotifications(){
+  const list=document.getElementById('notification-list');if(!list)return;
+  const damaged=allReports.filter(r=>r.category&&(r.category.includes('ชำรุด')||r.category.includes('ลื่น')||r.category.includes('หลุม'))).length;
+  const recent=allReports.slice(-3).reverse();
+  const accidents=allReports.filter(r=>r.type==='accident').length;
+  const avgRisk=allReports.length?(allReports.reduce((s,r)=>s+r.risk,0)/allReports.length).toFixed(1):'0.0';
+  list.innerHTML=`
+    <div class="notif-item"><div class="notif-title"><span>⚠️</span>สภาพถนนในเส้นทางประจำของคุณ</div><div class="notif-body">พบรายงานถนนชำรุดและลื่น <b>${damaged}</b> จุดในพื้นที่ของคุณ แนะนำให้ลดความเร็ว</div></div>
+    <div class="notif-item"><div class="notif-title"><span>📊</span>ความเสี่ยงประจำสัปดาห์</div><div class="notif-body">ทางแยกพุทธมณฑลสาย 4 มี Risk Score เฉลี่ย <b>${avgRisk}/10</b></div></div>
+    <div class="notif-item"><div class="notif-title"><span>📢</span>รายงานจาก MotoServer Crowdsourcing</div><div class="notif-body">มีอุบัติเหตุ <b>${accidents}</b> ครั้งในช่วง 30 วัน · เพิ่มขึ้น <b>${Math.min(40,accidents*5)}%</b></div></div>
+    ${recent.length?`<div class="notif-item" style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:10px;padding:10px;margin-top:8px;border:none;"><div class="notif-title"><span>🆕</span>รายงานล่าสุด</div><div class="notif-body">${recent.map(r=>`<div style="margin-top:3px;">• ${r.category} (Risk ${r.risk}/10) — ${r.date}</div>`).join('')}<div style="margin-top:6px;"><a onclick="navigate('reports-list')" style="color:var(--navy);font-weight:700;cursor:pointer;text-decoration:underline;">ดูทั้งหมด ›</a></div></div></div>`:''}
+  `;
+}
+function renderReportsFeed(){
+  const feed=document.getElementById('reports-feed');if(!feed)return;
+  const sorted=[...allReports].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  feed.innerHTML=sorted.length===0?'<div class="empty-state"><div class="icon">📭</div>ยังไม่มีรายงาน</div>':
+    sorted.map(r=>{
+      return `
+      <div class="card" style="padding:14px;cursor:pointer;" onclick="focusReport('${r.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-weight:700;color:var(--navy);font-size:13px;">${r.type==='accident'?'🚨 อุบัติเหตุ':'⚠️ จุดเสี่ยง'}</div>
+          <div style="background:${r.risk>=8?'#fee2e2':r.risk>=5?'#fef3c7':'#d1fae5'};color:${r.risk>=8?'#991b1b':r.risk>=5?'#92400e':'#065f46'};padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;">Risk ${r.risk}/10</div>
+        </div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${escapeHtml(r.category)}</div>
+        ${reportVisual(r,170)}${r.photo?'<div style="font-size:9px;color:var(--green);font-weight:700;margin-bottom:4px;">📷 รูปจริงจากผู้รายงาน</div>':''}
+        ${r.notes?`<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">${escapeHtml(r.notes)}</div>`:''}
+        <div style="font-size:10px;color:var(--muted);">📍 ${r.lat.toFixed(3)}, ${r.lng.toFixed(3)} · ⏰ ${r.time} · 📅 ${r.date}</div>
+        ${r.area?`<div style="font-size:10px;color:var(--muted);">พื้นที่: ${escapeHtml(r.area)}</div>`:''}
+        <div style="font-size:9px;color:var(--muted);margin-top:6px;">โดย: <b>${escapeHtml(r.userName||'-')}</b> ${r.source!=='seed'?'· <span style="color:var(--green);font-weight:700;">✓ MotoServer</span>':'· 📦 ตั้งต้น'}</div>
+      </div>`;
+    }).join('');
+}
+function focusReport(id){
+  const r=allReports.find(x=>x.id===id);if(!r)return;
+  navigate('home');
+  setTimeout(()=>{if(mainMap){mainMap.setView([r.lat,r.lng],15);L.popup({maxWidth:230}).setLatLng([r.lat,r.lng]).setContent(`<b>${escapeHtml(r.category)}</b><br>Risk ${r.risk}/10<br>${r.notes?escapeHtml(r.notes)+'<br>':''}${reportVisual(r,130)}`).openOn(mainMap)}},300);
+}
+
+// ============ REPORT FORM ============
+function openReportForm(type){currentReportType=type;navigate('report-form')}
+function initFormDefaults(){
+  document.getElementById('form-date').value=new Date().toISOString().split('T')[0];
+  const now=new Date();
+  document.getElementById('form-time').value=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('form-area').value='';
+  document.getElementById('form-notes').value='';
+  document.getElementById('form-type').value='';
+  document.getElementById('risk-level').value=7;
+  updateRisk();
+  pickedLocation=null;
+  document.getElementById('loc-coords').textContent='แตะแผนที่เพื่อเลือกตำแหน่ง';
+  document.getElementById('photo-preview').style.display='none';
+  document.getElementById('photo-icon').style.display='';
+  document.getElementById('photo-text').style.display='';
+  pendingPhoto=null;rawPhotoDataUrl=null;photoCompressing=false;
+  const fp=document.getElementById('form-photo');if(fp)fp.value='';
+}
+function updateRisk(){document.getElementById('risk-level-value').textContent=document.getElementById('risk-level').value+' / 10'}
+function selectVerify(el){document.querySelectorAll('.verify-option').forEach(o=>o.classList.remove('selected'));el.classList.add('selected')}
+
+let pendingPhoto=null;     // compressed base64 ready to store
+let rawPhotoDataUrl=null;  // raw uploaded image (compressed lazily on submit if needed)
+let photoCompressing=false;
+
+document.addEventListener('change',e=>{
+  if(e.target&&e.target.id==='form-photo'){
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      rawPhotoDataUrl=ev.target.result;
+      const img=document.getElementById('photo-preview');
+      img.src=ev.target.result;img.style.display='block';
+      document.getElementById('photo-icon').style.display='none';
+      document.getElementById('photo-text').style.display='none';
+      // Start compressing in background
+      photoCompressing=true;
+      compressImage(ev.target.result,(compressed)=>{pendingPhoto=compressed;photoCompressing=false});
+    };
+    r.readAsDataURL(f);
+  }
+});
+
+// Resize + compress image to keep it small enough to store/sync
+function compressImage(dataUrl,cb){
+  const img=new Image();
+  img.onload=()=>{
+    // Aggressive resize so base64 stays small enough to sync via Firebase
+    const maxW=480;
+    const scale=Math.min(1,maxW/img.width);
+    const cv=document.createElement('canvas');
+    cv.width=Math.round(img.width*scale);
+    cv.height=Math.round(img.height*scale);
+    const ctx=cv.getContext('2d');
+    ctx.drawImage(img,0,0,cv.width,cv.height);
+    try{
+      let q=0.5;
+      let out=cv.toDataURL('image/jpeg',q);
+      // If still too big (>120KB), step quality down until it fits
+      while(out.length>120000&&q>0.25){
+        q-=0.1;
+        out=cv.toDataURL('image/jpeg',q);
+      }
+      cb(out);
+    }catch{cb(null)}
+  };
+  img.onerror=()=>cb(null);
+  img.src=dataUrl;
+}
+
+// Get the photo for the report, waiting for compression if needed
+function getReportPhoto(){
+  return new Promise(resolve=>{
+    if(pendingPhoto){resolve(pendingPhoto);return}
+    if(!rawPhotoDataUrl){resolve(null);return}
+    // Compression not done yet — wait up to 3s, else compress now
+    let waited=0;
+    const iv=setInterval(()=>{
+      waited+=100;
+      if(pendingPhoto){clearInterval(iv);resolve(pendingPhoto)}
+      else if(waited>=3000){
+        clearInterval(iv);
+        compressImage(rawPhotoDataUrl,(c)=>resolve(c));
+      }
+    },100);
+  });
+}
+
+async function submitReport(){
+  const cat=document.getElementById('form-type').value;
+  if(!cat){showToast('กรุณาเลือกประเภทเหตุการณ์','error');return}
+  if(!pickedLocation){showToast('กรุณาเลือกตำแหน่งบนแผนที่','error');return}
+  const time=document.getElementById('form-time').value;
+  if(!time){showToast('กรุณาระบุเวลา','error');return}
+  if(!rawPhotoDataUrl){showToast('📷 กรุณาแนบรูปภาพประกอบ','error');return}
+  const verify=document.querySelector('.verify-option.selected')?.dataset.verify||'confirmed';
+  const photo=await getReportPhoto();
+  if(!photo){showToast('📷 ประมวลผลรูปไม่สำเร็จ ลองแนบรูปใหม่','error');return}
+  const report={
+    id:'r_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+    type:currentReportType,category:cat,
+    lat:pickedLocation.lat,lng:pickedLocation.lng,
+    risk:parseInt(document.getElementById('risk-level').value,10),
+    area:document.getElementById('form-area').value,
+    notes:document.getElementById('form-notes').value,
+    time,date:document.getElementById('form-date').value,
+    verify,source:'user',createdAt:Date.now(),
+    userId:currentUser?.uid||'anon',
+    userName:currentUser?.displayName||'ผู้ใช้',
+    photo:photo,
+  };
+  // Add locally FIRST so the UI always updates even if the network is slow
+  if(!allReports.find(r=>r.id===report.id)){
+    allReports.push(report);
+    knownReportIds.add(report.id);
+    userReportCount++;
+  }
+  userPoints+=25;
+  await saveUser();
+  refreshHeatmap();refreshDashMap();renderNotifications();renderDashboard();updateAllDisplays();
+  showToast(currentReportType==='accident'?'🚨 กำลังส่งแจ้งเตือนถึงทุกคน...':'✅ กำลังส่งไป MotoServer...');
+  // Then push to the shared database
+  try{
+    await Store.addReport(report);
+    showToast(currentReportType==='accident'?'🚨 ส่งแจ้งเตือนถึงทุกคนแล้ว · +25 Points':'✅ ส่งไป MotoServer · +25 Points');
+  }catch(e){
+    console.error('addReport failed',e);
+    showToast('⚠️ บันทึกขึ้นส่วนกลางไม่สำเร็จ ('+(e&&e.message||'error')+') — รูปอาจใหญ่เกินไป','error');
+  }
+  setTimeout(()=>navigate('home'),900);
+}
+
+// One-time cleanup: purge known test/junk reports from the shared database.
+// Removes reports whose notes look like test data (e.g. "งงง", "test", "ทดสอบ").
+async function purgeTestReports(){
+  try{
+    const reports=await Store.getReports();
+    const junkPattern=/^(ง+|ทดสอบ|test|asdf|qwer|aaa+|111+|\.+)$/i;
+    const toRemove=reports.filter(r=>{
+      if(r.source==='seed')return false;
+      const n=String(r.notes||'').trim();
+      const a=String(r.area||'').trim();
+      return junkPattern.test(n)||junkPattern.test(a)||(n==='งงง')||(a==='ปวดหัว'&&n==='งงง');
+    });
+    if(toRemove.length===0)return;
+    for(const r of toRemove){
+      if(firebaseConnected){await fbDb.ref('reports/'+r.id).remove()}
+    }
+    if(!firebaseConnected){
+      const keep=reports.filter(r=>!toRemove.find(x=>x.id===r.id));
+      localStorage.setItem('mg:reports',JSON.stringify(keep));
+      try{bc.postMessage({type:'reports-updated'})}catch{}
+    }
+    allReports=allReports.filter(r=>!toRemove.find(x=>x.id===r.id));
+    toRemove.forEach(r=>knownReportIds.delete(r.id));
+    refreshHeatmap();refreshDashMap();renderNotifications();renderDashboard();updateAllDisplays();
+    console.log('Purged '+toRemove.length+' test report(s)');
+  }catch(e){console.warn('purge failed',e)}
+}
+
+// ============ BRAKE OR CRASH GAME ============
+const game={running:false,health:3,score:0,lane:'center',braking:false,obstacles:[],lastSpawn:0,spawnInterval:1500,startTime:0,obstacleId:0,rafId:null,canvasW:0,canvasH:0};
+
+function openBrakeOrCrash(){
+  document.getElementById('page-brake-game').classList.add('active');
+  resetGameUI();
+  document.getElementById('game-pre-start').style.display='flex';
+  document.getElementById('game-overlay').classList.remove('show');
+}
+function exitGame(){
+  game.running=false;
+  if(game.rafId)cancelAnimationFrame(game.rafId);
+  document.getElementById('page-brake-game').classList.remove('active');
+}
+function resetGameUI(){
+  game.health=3;game.score=0;game.lane='center';game.braking=false;game.obstacles=[];game.spawnInterval=1500;
+  document.getElementById('game-health').textContent='3';
+  document.getElementById('game-score').textContent='0';
+  document.getElementById('game-speed').textContent='1.0x';
+  document.getElementById('obstacles-container').innerHTML='';
+  const m=document.getElementById('motorcycle');
+  m.classList.remove('lane-left','lane-right','braking','hit');
+}
+function startGame(){
+  document.getElementById('game-pre-start').style.display='none';
+  resetGameUI();
+  const c=document.getElementById('game-canvas');
+  game.canvasW=c.clientWidth;game.canvasH=c.clientHeight;
+  game.startTime=performance.now();
+  game.lastSpawn=performance.now();
+  game.running=true;
+  game.rafId=requestAnimationFrame(gameLoop);
+}
+function restartGame(){document.getElementById('game-overlay').classList.remove('show');startGame()}
+
+const OBSTACLE_TYPES=[
+  {type:'car',lane:'left',requiredAction:'lane-right',points:30},
+  {type:'car',lane:'right',requiredAction:'lane-left',points:30},
+  {type:'car',lane:'center',requiredAction:'lane-left-or-right',points:30},
+  {type:'pedestrian',lane:'both',requiredAction:'brake',points:50},
+  {type:'red-light',lane:'both',requiredAction:'brake',points:50},
+  {type:'green-light',lane:'both',requiredAction:'none',points:20},
+  {type:'pothole',lane:'left',requiredAction:'lane-right',points:25},
+  {type:'pothole',lane:'right',requiredAction:'lane-left',points:25},
+  {type:'slippery',lane:'both',requiredAction:'brake',points:40},
+];
+function randCarColor(){return['#dc2626','#2563eb','#facc15','#10b981','#1f2937','#94a3b8'][Math.floor(Math.random()*6)]}
+
+function spawnObstacle(){
+  const elapsed=(performance.now()-game.startTime)/1000;
+  let av=OBSTACLE_TYPES.slice();
+  if(elapsed<5)av=av.filter(t=>t.type==='car'||t.type==='pothole');
+  if(elapsed<12)av=av.filter(t=>t.type!=='slippery');
+  const t=av[Math.floor(Math.random()*av.length)];
+  const obs={id:++game.obstacleId,type:t.type,lane:t.lane,requiredAction:t.requiredAction,points:t.points,y:-100,triggered:false,el:null};
+  const el=document.createElement('div');
+  if(t.type==='red-light'||t.type==='green-light'){
+    el.className='obstacle traffic-light '+(t.type==='green-light'?'green':'red');
+    const sl=document.createElement('div');sl.className='stop-line';
+    const badge=document.createElement('div');badge.className='badge';
+    badge.textContent=t.type==='green-light'?'GO':'STOP';
+    el.appendChild(badge);el.appendChild(sl);
+  }else if(t.type==='car'){
+    el.className='obstacle car';
+    el.innerHTML=`<svg viewBox="0 0 48 78" width="48" height="78"><rect x="3" y="5" width="42" height="68" rx="6" fill="${randCarColor()}" stroke="#000" stroke-width="1.5"/><rect x="7" y="13" width="34" height="20" rx="3" fill="#1a1a1a" opacity="0.85"/><rect x="7" y="45" width="34" height="22" rx="3" fill="#1a1a1a" opacity="0.7"/><rect x="1" y="22" width="4" height="12" fill="#000"/><rect x="43" y="22" width="4" height="12" fill="#000"/><rect x="1" y="56" width="4" height="12" fill="#000"/><rect x="43" y="56" width="4" height="12" fill="#000"/></svg>`;
+  }else if(t.type==='pedestrian'){
+    el.className='obstacle pedestrian';
+    el.textContent='🚶';
+  }else if(t.type==='pothole'){
+    el.className='obstacle pothole';
+  }else if(t.type==='slippery'){
+    el.className='obstacle slippery';
+    el.textContent='💧 ถนนลื่น 💧';
+  }
+  if(t.lane==='left')el.style.left='22%';
+  else if(t.lane==='right')el.style.right='22%';
+  else if(t.lane==='center'){el.style.left='50%';el.style.transform='translateX(-50%)'}
+  el.style.top='-100px';
+  document.getElementById('obstacles-container').appendChild(el);
+  obs.el=el;
+  game.obstacles.push(obs);
+}
+
+function gameLoop(now){
+  if(!game.running)return;
+  const elapsed=(now-game.startTime)/1000;
+  const baseSpeed=3+Math.min(8,elapsed/6);
+  const speed=game.braking?baseSpeed*0.3:baseSpeed;
+  document.getElementById('game-speed').textContent=(speed/3).toFixed(1)+'x';
+  document.getElementById('lane-anim').style.animationDuration=(0.6/Math.max(0.3,speed/3))+'s';
+  game.spawnInterval=Math.max(700,1500-elapsed*30);
+  if(now-game.lastSpawn>game.spawnInterval){spawnObstacle();game.lastSpawn=now}
+  const playerY=game.canvasH-90-40;
+  for(let i=game.obstacles.length-1;i>=0;i--){
+    const o=game.obstacles[i];
+    o.y+=speed;
+    if(o.el)o.el.style.top=o.y+'px';
+    if(!o.triggered&&o.y>playerY-30&&o.y<playerY+50){o.triggered=true;evaluateObstacle(o)}
+    if(o.y>game.canvasH+50){if(o.el)o.el.remove();game.obstacles.splice(i,1)}
+  }
+  if(Math.floor(elapsed*10)%10===0){
+    game.score=Math.max(game.score,Math.floor(elapsed*5));
+    document.getElementById('game-score').textContent=game.score;
+  }
+  game.rafId=requestAnimationFrame(gameLoop);
+}
+
+function evaluateObstacle(o){
+  const lane=game.lane;
+  let success=false;
+  if(o.requiredAction==='none')success=true;
+  else if(o.requiredAction==='brake')success=game.braking;
+  else if(o.requiredAction==='lane-left')success=lane==='left';
+  else if(o.requiredAction==='lane-right')success=lane==='right';
+  else if(o.requiredAction==='lane-left-or-right')success=lane==='left'||lane==='right';
+  if(!success&&(o.type==='car'||o.type==='pothole')){
+    if(o.lane==='left'&&lane!=='left')success=true;
+    if(o.lane==='right'&&lane!=='right')success=true;
+  }
+  if(success){
+    game.score+=o.points;
+    document.getElementById('game-score').textContent=game.score;
+    showScorePopup('+'+o.points,o.el);
+    showGameToast(o.points>=40?'💯 PERFECT!':'✓ ปลอดภัย','success');
+  }else{
+    game.health--;
+    document.getElementById('game-health').textContent=game.health;
+    const m=document.getElementById('motorcycle');
+    m.classList.add('hit');
+    setTimeout(()=>m.classList.remove('hit'),400);
+    showGameToast('💥 พลาด! '+getReason(o),'error');
+    if(game.health<=0)endGame();
+  }
+}
+function getReason(o){
+  if(o.requiredAction==='brake')return'ต้องเบรก!';
+  if(o.requiredAction==='lane-left')return'ต้องไปเลนซ้าย!';
+  if(o.requiredAction==='lane-right')return'ต้องไปเลนขวา!';
+  if(o.requiredAction==='lane-left-or-right')return'ต้องเปลี่ยนเลน!';
+  return'';
+}
+function showScorePopup(text,nearEl){
+  const p=document.createElement('div');
+  p.className='score-popup';p.textContent=text;
+  if(nearEl){
+    const r=nearEl.getBoundingClientRect();
+    const cr=document.getElementById('game-canvas').getBoundingClientRect();
+    p.style.left=(r.left-cr.left+r.width/2-20)+'px';
+    p.style.top=(r.top-cr.top)+'px';
+  }else{p.style.left='50%';p.style.top='50%'}
+  document.getElementById('game-canvas').appendChild(p);
+  setTimeout(()=>p.remove(),1000);
+}
+function showGameToast(text,type){
+  const t=document.getElementById('game-toast');
+  t.textContent=text;
+  t.className='game-toast show '+(type||'');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{t.classList.remove('show')},1200);
+}
+function moveLane(dir){
+  if(!game.running)return;
+  const m=document.getElementById('motorcycle');
+  if(dir==='left'){
+    if(game.lane==='right')game.lane='center';
+    else if(game.lane==='center')game.lane='left';
+    else game.lane='left';
+  }else{
+    if(game.lane==='left')game.lane='center';
+    else if(game.lane==='center')game.lane='right';
+    else game.lane='right';
+  }
+  m.classList.remove('lane-left','lane-right');
+  if(game.lane==='left')m.classList.add('lane-left');
+  if(game.lane==='right')m.classList.add('lane-right');
+}
+function setBrake(on){
+  if(!game.running)return;
+  game.braking=on;
+  document.getElementById('motorcycle').classList.toggle('braking',on);
+  document.getElementById('btn-brake').classList.toggle('pressed',on);
+}
+async function endGame(){
+  game.running=false;
+  if(game.rafId)cancelAnimationFrame(game.rafId);
+  game.obstacles.forEach(o=>o.el&&o.el.remove());
+  game.obstacles=[];
+  const survived=Math.floor((performance.now()-game.startTime)/1000);
+  const earned=Math.floor(game.score/5)+survived;
+  if(game.score>bestScore)bestScore=game.score;
+  userPoints+=earned;
+  await saveUser();
+  document.getElementById('go-score').textContent=game.score;
+  document.getElementById('go-points').textContent='+'+earned;
+  document.getElementById('go-survived').textContent=survived+'s';
+  document.getElementById('game-overlay').classList.add('show');
+}
+
+document.addEventListener('keydown',e=>{
+  if(!game.running)return;
+  if(e.key==='a'||e.key==='A'||e.key==='ArrowLeft'){e.preventDefault();moveLane('left')}
+  if(e.key==='d'||e.key==='D'||e.key==='ArrowRight'){e.preventDefault();moveLane('right')}
+  if(e.key===' '||e.key==='s'||e.key==='S'||e.key==='ArrowDown'){e.preventDefault();setBrake(true)}
+});
+document.addEventListener('keyup',e=>{
+  if(e.key===' '||e.key==='s'||e.key==='S'||e.key==='ArrowDown')setBrake(false);
+});
+
+// ============ MISSIONS ============
+function renderMissions(){
+  const list=document.getElementById('missions-list');if(!list)return;
+  list.innerHTML=MISSIONS.map(m=>{
+    const done=completedMissions[m.id];
+    return `<div class="league-mission">
+      <div class="mission-icon">${m.icon}</div>
+      <div class="mission-content">
+        <div class="mission-text">${m.text}</div>
+        <div class="mission-points"><b>+${m.points}</b> Moto Points ${done?'· ✓ เสร็จแล้ว':''}</div>
+      </div>
+      <button class="mission-btn ${done?'done':m.cls}" ${done?'':`onclick="completeMission('${m.id}')"`}>${done?'✓':m.label}</button>
+    </div>`;
+  }).join('');
+}
+async function completeMission(id){
+  const m=MISSIONS.find(x=>x.id===id);
+  if(!m||completedMissions[id])return;
+  // Route to proper interactive mission
+  if(id==='helmet')return openHelmetMission();
+  if(id==='quiz')return openQuizMission();
+  if(id==='register')return openRegisterMission();
+  if(id==='speed-check')return openSpeedCheckMission();
+  if(id==='survey')return openSurveyMission();
+  if(id==='review'){showToast('ไปรีวิวร้านใน MotoGuide กันก่อน!','warn');setTimeout(()=>navigate('guide'),800);return}
+  if(id==='report5'){
+    if(userReportCount<5){showToast(`ต้องรายงานอีก ${5-userReportCount} จุด`,'warn');setTimeout(()=>navigate('report'),800);return}
+    return finalizeMission(id);
+  }
+}
+
+async function finalizeMission(id){
+  const m=MISSIONS.find(x=>x.id===id);
+  if(!m||completedMissions[id])return;
+  completedMissions[id]=Date.now();
+  userPoints+=m.points;
+  await saveUser();
+  closeMissionModal();
+  renderMissions();
+  showToast(`✓ ภารกิจสำเร็จ! +${m.points} Moto Points`);
+}
+
+function openMissionModal(html){
+  document.getElementById('mission-modal-content').innerHTML=html;
+  document.getElementById('mission-modal').classList.add('show');
+}
+function closeMissionModal(){
+  document.getElementById('mission-modal').classList.remove('show');
+}
+
+// ====== Mission 1: Helmet photo upload ======
+function openHelmetMission(){
+  openMissionModal(`
+    <div style="text-align:center;">
+      <div class="modal-icon">🪖</div>
+      <div class="modal-title">ส่งภาพสวมหมวกกันน็อก</div>
+      <div class="modal-text">ถ่ายรูปหรืออัปโหลดภาพคุณกำลังสวมหมวกกันน็อก เพื่อยืนยันการขับขี่อย่างปลอดภัย</div>
+    </div>
+    <label class="photo-upload" for="helmet-photo" style="margin-bottom:12px;">
+      <span class="photo-upload-icon" id="helmet-icon">📷</span>
+      <span class="photo-upload-text" id="helmet-text">แตะเพื่อถ่ายภาพ / เลือกรูป</span>
+      <img id="helmet-preview" style="display:none;">
+      <input type="file" accept="image/*" capture="user" id="helmet-photo" onchange="previewHelmet(event)">
+    </label>
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeMissionModal()">ยกเลิก</button>
+      <button class="modal-btn primary" id="helmet-submit-btn" disabled onclick="finalizeMission('helmet')">📤 ส่ง · +100</button>
+    </div>
+  `);
+}
+function previewHelmet(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    const img=document.getElementById('helmet-preview');
+    img.src=ev.target.result;img.style.display='block';
+    document.getElementById('helmet-icon').style.display='none';
+    document.getElementById('helmet-text').style.display='none';
+    document.getElementById('helmet-submit-btn').disabled=false;
+  };
+  r.readAsDataURL(f);
+}
+
+// ====== Mission 2: Quiz ======
+const QUIZ_QUESTIONS=[
+  {q:'ความเร็วสูงสุดที่อนุญาตของรถจักรยานยนต์ในเขตเทศบาลคือเท่าไร?',a:['60 กม./ชม.','80 กม./ชม.','100 กม./ชม.','120 กม./ชม.'],correct:0},
+  {q:'ขณะขับขี่บนถนนเปียก ระยะเบรกจะเป็นอย่างไร?',a:['สั้นกว่าปกติ','เท่าเดิม','ยาวขึ้น 2-3 เท่า','ไม่เกี่ยวกัน'],correct:2},
+  {q:'หมวกกันน็อกที่ปลอดภัยควรมีมาตรฐานอะไร?',a:['มอก.','สวยงาม','ราคาถูก','สีเข้ม'],correct:0},
+  {q:'เมื่อเลี้ยวซ้าย ควรเปิดสัญญาณไฟล่วงหน้ากี่เมตร?',a:['10 เมตร','30 เมตร','60 เมตร','100 เมตร'],correct:1},
+  {q:'ปริมาณแอลกอฮอล์ในเลือดสูงสุดที่กฎหมายอนุญาตขณะขับขี่?',a:['20 mg%','50 mg%','80 mg%','100 mg%'],correct:1},
+];
+let quizState={current:0,score:0,answered:false};
+function openQuizMission(){
+  quizState={current:0,score:0,answered:false};
+  renderQuiz();
+}
+function renderQuiz(){
+  const q=QUIZ_QUESTIONS[quizState.current];
+  if(!q){
+    // Done
+    const passed=quizState.score>=3;
+    openMissionModal(`
+      <div style="text-align:center;">
+        <div class="modal-icon">${passed?'🎉':'😅'}</div>
+        <div class="modal-title">${passed?'ผ่านแล้ว!':'ลองอีกครั้ง'}</div>
+        <div class="modal-text">คุณตอบถูก ${quizState.score}/${QUIZ_QUESTIONS.length} ข้อ</div>
+        <div class="modal-buttons">
+          <button class="modal-btn secondary" onclick="closeMissionModal()">ปิด</button>
+          ${passed?`<button class="modal-btn primary" onclick="finalizeMission('quiz')">✓ รับ +50 Points</button>`:`<button class="modal-btn primary" onclick="openQuizMission()">🔄 ลองใหม่</button>`}
+        </div>
+      </div>
+    `);
+    return;
+  }
+  openMissionModal(`
+    <div style="text-align:center;margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--muted);font-weight:600;">คำถามที่ ${quizState.current+1} / ${QUIZ_QUESTIONS.length}</div>
+      <div style="height:6px;background:var(--bg);border-radius:3px;margin-top:6px;overflow:hidden;">
+        <div style="height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-deep));width:${(quizState.current/QUIZ_QUESTIONS.length)*100}%;transition:width 0.3s;"></div>
+      </div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px;line-height:1.5;">${q.q}</div>
+    <div id="quiz-options">
+      ${q.a.map((opt,i)=>`<button class="quiz-opt" onclick="answerQuiz(${i})" style="display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;background:var(--bg);border:2px solid transparent;border-radius:10px;font-family:inherit;font-size:13px;cursor:pointer;color:var(--text);">${String.fromCharCode(65+i)}. ${opt}</button>`).join('')}
+    </div>
+  `);
+}
+function answerQuiz(idx){
+  if(quizState.answered)return;
+  quizState.answered=true;
+  const q=QUIZ_QUESTIONS[quizState.current];
+  const opts=document.querySelectorAll('.quiz-opt');
+  opts.forEach((o,i)=>{
+    o.disabled=true;
+    if(i===q.correct){o.style.background='#d1fae5';o.style.borderColor='#16a34a';o.style.color='#065f46'}
+    else if(i===idx){o.style.background='#fee2e2';o.style.borderColor='#dc2626';o.style.color='#991b1b'}
+  });
+  if(idx===q.correct)quizState.score++;
+  setTimeout(()=>{
+    quizState.current++;quizState.answered=false;
+    renderQuiz();
+  },1200);
+}
+
+// ====== Mission 3: Register for safety training ======
+function openRegisterMission(){
+  openMissionModal(`
+    <div style="text-align:center;">
+      <div class="modal-icon">🎓</div>
+      <div class="modal-title">ลงทะเบียนอบรมขับขี่ปลอดภัย</div>
+      <div class="modal-text">การอบรม 2 ชม. ออนไลน์<br>โดย กรมการขนส่งทางบก</div>
+    </div>
+    <div style="background:var(--bg);border-radius:12px;padding:12px;margin-bottom:12px;font-size:12px;line-height:1.7;">
+      <b style="color:var(--navy);">📅 รอบที่จะมาถึง:</b><br>
+      • วันเสาร์ที่ 24 พ.ค. — 09:00-11:00<br>
+      • วันอาทิตย์ที่ 25 พ.ค. — 13:00-15:00<br>
+      • วันเสาร์ที่ 31 พ.ค. — 09:00-11:00
+    </div>
+    <div class="auth-input-wrap">
+      <label class="auth-input-label">ชื่อ-สกุล</label>
+      <input type="text" class="auth-input" id="reg-name" placeholder="ชื่อ-สกุลตามบัตรประชาชน">
+    </div>
+    <div class="auth-input-wrap">
+      <label class="auth-input-label">เบอร์โทร</label>
+      <input type="tel" class="auth-input" id="reg-phone" placeholder="0XX-XXX-XXXX">
+    </div>
+    <div class="auth-input-wrap">
+      <label class="auth-input-label">เลือกรอบ</label>
+      <select class="form-select" id="reg-slot" style="width:100%;">
+        <option value="">-- เลือกรอบ --</option>
+        <option>เสาร์ 24 พ.ค.</option>
+        <option>อาทิตย์ 25 พ.ค.</option>
+        <option>เสาร์ 31 พ.ค.</option>
+      </select>
+    </div>
+    <div class="modal-buttons" style="margin-top:14px;">
+      <button class="modal-btn secondary" onclick="closeMissionModal()">ยกเลิก</button>
+      <button class="modal-btn primary" onclick="submitRegister()">📤 ลงทะเบียน · +200</button>
+    </div>
+  `);
+}
+function submitRegister(){
+  const name=document.getElementById('reg-name').value.trim();
+  const phone=document.getElementById('reg-phone').value.trim();
+  const slot=document.getElementById('reg-slot').value;
+  if(!name||!phone||!slot){showToast('กรุณากรอกข้อมูลให้ครบ','error');return}
+  if(!/^[0-9-]{9,12}$/.test(phone)){showToast('เบอร์โทรไม่ถูกต้อง','error');return}
+  finalizeMission('register');
+  showToast(`✓ ลงทะเบียนเรียบร้อย — รอบ ${slot}`);
+}
+
+// ====== Mission 4: Speed check (real GPS) ======
+function openSpeedCheckMission(){
+  openMissionModal(`
+    <div style="text-align:center;">
+      <div class="modal-icon">🏍️</div>
+      <div class="modal-title">ตรวจสอบความเร็ว</div>
+      <div class="modal-text">เปิด GPS เพื่อตรวจวัดความเร็วในการขับขี่<br>ขับไม่เกิน 60 กม./ชม. เป็นเวลา 30 วินาที</div>
+    </div>
+    <div id="speed-display" style="background:#0f172a;color:#4ade80;font-family:'Bebas Neue',sans-serif;font-size:60px;text-align:center;padding:24px;border-radius:14px;margin-bottom:12px;letter-spacing:2px;">
+      0 <span style="font-size:18px;color:#94a3b8;">km/h</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:14px;">
+      <span style="color:var(--muted);">⏱️ <span id="speed-timer">0</span>s / 30s</span>
+      <span style="color:var(--muted);">🚦 ขีดจำกัด: 60 km/h</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="modal-btn secondary" onclick="stopSpeedCheck()">หยุด</button>
+      <button class="modal-btn primary" id="speed-start-btn" onclick="startSpeedCheck()">▶ เริ่มตรวจ</button>
+    </div>
+    <div id="speed-status" style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px;"></div>
+  `);
+}
+let speedWatch=null,speedTimer=null;
+function startSpeedCheck(){
+  if(!navigator.geolocation){showToast('เบราว์เซอร์ไม่รองรับ GPS','error');return}
+  document.getElementById('speed-start-btn').disabled=true;
+  document.getElementById('speed-start-btn').textContent='กำลังตรวจ...';
+  document.getElementById('speed-status').textContent='🔍 รอสัญญาณ GPS...';
+  let elapsed=0;
+  speedTimer=setInterval(()=>{
+    elapsed++;
+    document.getElementById('speed-timer').textContent=elapsed;
+    if(elapsed>=30){
+      stopSpeedCheck();
+      document.getElementById('speed-status').innerHTML='<b style="color:var(--green);">✓ ผ่าน! ขับขี่ปลอดภัย</b>';
+      setTimeout(()=>finalizeMission('speed-check'),1000);
+    }
+  },1000);
+  speedWatch=navigator.geolocation.watchPosition(pos=>{
+    const speed=pos.coords.speed?Math.round(pos.coords.speed*3.6):0;
+    document.getElementById('speed-display').innerHTML=`${speed} <span style="font-size:18px;color:#94a3b8;">km/h</span>`;
+    if(speed>60){
+      document.getElementById('speed-status').innerHTML='<b style="color:var(--red);">⚠️ ขับเร็วเกินกำหนด! ลดความเร็ว</b>';
+      document.getElementById('speed-display').style.color='#ef4444';
+    }else{
+      document.getElementById('speed-status').textContent='✓ ขับขี่ในความเร็วที่ปลอดภัย';
+      document.getElementById('speed-display').style.color='#4ade80';
+    }
+  },err=>{
+    document.getElementById('speed-status').innerHTML='<b style="color:var(--red);">❌ GPS ไม่พร้อม: '+err.message+'</b>';
+    stopSpeedCheck();
+  },{enableHighAccuracy:true,maximumAge:0});
+}
+function stopSpeedCheck(){
+  if(speedWatch!==null){navigator.geolocation.clearWatch(speedWatch);speedWatch=null}
+  if(speedTimer){clearInterval(speedTimer);speedTimer=null}
+  const btn=document.getElementById('speed-start-btn');
+  if(btn){btn.disabled=false;btn.textContent='▶ เริ่มตรวจ'}
+}
+
+// ====== Mission 5: Survey ======
+const SURVEY_QUESTIONS=[
+  {q:'คุณคิดว่าการสวมหมวกกันน็อกสำคัญแค่ไหน?',scale:['ไม่จำเป็น','สำคัญน้อย','ปานกลาง','สำคัญ','สำคัญมาก']},
+  {q:'คุณรู้สึกอย่างไรกับการขับขี่หลังดื่มแอลกอฮอล์?',scale:['ปลอดภัย','ค่อนข้างปลอดภัย','ปานกลาง','อันตราย','อันตรายมาก']},
+  {q:'คุณตรวจสอบสภาพรถก่อนใช้งานบ่อยแค่ไหน?',scale:['ไม่เคย','นานๆ ครั้ง','บ้าง','บ่อย','ทุกครั้ง']},
+  {q:'คุณเคารพกฎจราจรในชีวิตประจำวันแค่ไหน?',scale:['ไม่เลย','น้อย','ปานกลาง','มาก','สม่ำเสมอ']},
+];
+let surveyState={current:0,answers:[]};
+function openSurveyMission(){
+  surveyState={current:0,answers:[]};
+  renderSurvey();
+}
+function renderSurvey(){
+  const q=SURVEY_QUESTIONS[surveyState.current];
+  if(!q){
+    openMissionModal(`
+      <div style="text-align:center;">
+        <div class="modal-icon">📋</div>
+        <div class="modal-title">ขอบคุณที่ตอบแบบประเมิน!</div>
+        <div class="modal-text">คำตอบของคุณจะช่วยพัฒนาระบบขับขี่ปลอดภัย</div>
+        <div class="modal-buttons">
+          <button class="modal-btn primary" onclick="finalizeMission('survey')" style="width:100%;">✓ รับ +80 Points</button>
+        </div>
+      </div>
+    `);
+    return;
+  }
+  openMissionModal(`
+    <div style="text-align:center;margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--muted);font-weight:600;">ข้อที่ ${surveyState.current+1} / ${SURVEY_QUESTIONS.length}</div>
+      <div style="height:6px;background:var(--bg);border-radius:3px;margin-top:6px;overflow:hidden;">
+        <div style="height:100%;background:linear-gradient(90deg,#6366f1,#8b5cf6);width:${(surveyState.current/SURVEY_QUESTIONS.length)*100}%;transition:width 0.3s;"></div>
+      </div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px;line-height:1.5;">${q.q}</div>
+    <div>
+      ${q.scale.map((opt,i)=>`<button onclick="answerSurvey(${i})" style="display:block;width:100%;text-align:left;padding:11px 14px;margin-bottom:6px;background:var(--bg);border:2px solid transparent;border-radius:10px;font-family:inherit;font-size:13px;cursor:pointer;color:var(--text);">${i+1}. ${opt}</button>`).join('')}
+    </div>
+  `);
+}
+function answerSurvey(v){
+  surveyState.answers.push(v);
+  surveyState.current++;
+  renderSurvey();
+}
+
+// ============ MOTOGUIDE ============
+let activeCuisine='all';
+function renderCuisineFilters(){
+  const cuisines=['all',...new Set(RESTAURANTS.map(r=>r.cuisine))];
+  document.getElementById('cuisine-filters').innerHTML=cuisines.map(c=>`<button class="cuisine-chip ${c===activeCuisine?'active':''}" onclick="setCuisine('${c}')">${c==='all'?'ทั้งหมด':c}</button>`).join('');
+}
+function setCuisine(c){activeCuisine=c;renderCuisineFilters();renderRestaurants()}
+function renderRestaurants(){
+  const list=document.getElementById('restaurants-list');if(!list)return;
+  // Update total count badge
+  const gc=document.getElementById('guide-count');if(gc)gc.textContent=RESTAURANTS.length;
+  const q=(document.getElementById('guide-search-input').value||'').toLowerCase();
+  let filtered=RESTAURANTS;
+  if(activeCuisine!=='all')filtered=filtered.filter(r=>r.cuisine===activeCuisine);
+  if(q)filtered=filtered.filter(r=>r.name.toLowerCase().includes(q)||r.cuisine.toLowerCase().includes(q)||r.tags.some(t=>t.toLowerCase().includes(q)));
+  const rc=document.getElementById('guide-result-count');if(rc)rc.textContent=filtered.length;
+  if(filtered.length===0){list.innerHTML='<div class="empty-state"><div class="icon">🔍</div>ไม่พบร้านที่ค้นหา</div>';return}
+  list.innerHTML=filtered.map(r=>{
+    const isOpen=isRestaurantOpen(r.hours);
+    const reviewCount=(allReviews[r.id]||[]).length+r.reviews;
+    return `<div class="restaurant-card" onclick="openRestaurant('${r.id}')">
+      <div class="restaurant-photo rgraphic" style="background:linear-gradient(135deg,${r.color},${shade(r.color,-35)});">
+        <div class="rgraphic-pattern"></div>
+        <div class="rgraphic-emoji">${r.emoji}</div>
+        <div class="rgraphic-cuisine">${r.cuisine}</div>
+        <div class="open-tag ${isOpen?'':'closed'}">${isOpen?'● เปิดอยู่':'○ ปิดแล้ว'}</div>
+        <div class="badge">⭐ ${r.rating}</div>
+      </div>
+      <div class="restaurant-info">
+        <div class="restaurant-name">${r.name}</div>
+        <div class="restaurant-meta">
+          <span>${r.cuisine}</span><span class="dot"></span>
+          <span class="price-tag">~${r.priceRange}฿</span><span class="dot"></span>
+          <span>📍 ${r.distance}</span><span class="dot"></span>
+          <span>(${reviewCount})</span>
+        </div>
+        <div class="restaurant-tags">
+          ${r.tags.map(t=>`<span class="restaurant-tag">${t}</span>`).join('')}
+          <span class="restaurant-tag discount">🎁 ลด ${r.discount}%</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function isRestaurantOpen(hours){
+  const[open,close]=hours.split('-').map(s=>{const[h,m]=s.split(':').map(Number);return h*60+(m||0)});
+  const now=new Date();const cur=now.getHours()*60+now.getMinutes();
+  return cur>=open&&cur<=close;
+}
+function openRestaurant(id){
+  const r=RESTAURANTS.find(x=>x.id===id);if(!r)return;
+  navigate('restaurant-detail');
+  const reviews=allReviews[id]||[];
+  document.getElementById('restaurant-detail-content').innerHTML=`
+    <div class="detail-photo rgraphic" style="background:linear-gradient(135deg,${r.color},${shade(r.color,-35)});">
+      <div class="rgraphic-pattern"></div>
+      <div class="rgraphic-emoji" style="font-size:72px;">${r.emoji}</div>
+      <div class="rgraphic-cuisine" style="font-size:13px;bottom:12px;">${r.cuisine}</div>
+    </div>
+    <div class="detail-name">${r.name}</div>
+    <div class="detail-rating-row">
+      <div class="detail-rating">
+        <span class="stars">${'⭐'.repeat(Math.floor(r.rating))}</span>
+        <span>${r.rating}</span>
+        <span style="color:var(--muted);font-weight:400;">(${reviews.length+r.reviews} รีวิว)</span>
+      </div>
+    </div>
+    <div style="font-size:13px;color:var(--text);line-height:1.5;margin-bottom:12px;">${r.desc}</div>
+    <div class="card" style="padding:8px 14px;">
+      <div class="detail-info-row"><span class="icon">🍜</span><span>${r.cuisine}</span></div>
+      <div class="detail-info-row"><span class="icon">💰</span><span>~${r.priceRange} บาท / คน</span></div>
+      <div class="detail-info-row"><span class="icon">⏰</span><span>${r.hours} ${isRestaurantOpen(r.hours)?'· <b style="color:var(--green);">เปิดอยู่</b>':'· <b style="color:var(--red);">ปิดแล้ว</b>'}</span></div>
+      <div class="detail-info-row"><span class="icon">📍</span><span>${r.distance} จาก ม.มหิดล ศาลายา</span></div>
+      <div class="detail-info-row"><span class="icon">🎁</span><span>ส่วนลด <b style="color:var(--gold-deep);">${r.discount}%</b> สำหรับสมาชิก MotoGuard</span></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button class="submit-btn" style="margin-top:0;background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 12px rgba(16,185,129,0.3);" onclick="openInMaps(${r.lat},${r.lng})">🗺️ Maps</button>
+      <button style="background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;border:none;padding:14px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;flex:1;box-shadow:0 4px 12px rgba(251,191,36,0.4);" onclick="navigate('rewards')">🎫 ดูส่วนลด</button>
+    </div>
+    <div class="section-title" style="margin-left:0;">รีวิวล่าสุด</div>
+    <div class="card" style="padding:10px 14px;">
+      ${reviews.length===0?'<div class="empty-state" style="padding:14px;">ยังไม่มีรีวิว · เป็นคนแรก!</div>':reviews.map(rv=>`
+        <div class="review-item">
+          <div class="review-header">
+            <div class="review-avatar">${rv.name.charAt(0).toUpperCase()}</div>
+            <div><div class="review-name">${escapeHtml(rv.name)}</div><div class="review-stars">${'⭐'.repeat(rv.stars)}</div></div>
+            <div class="review-date">${rv.date}</div>
+          </div>
+          <div class="review-text">${escapeHtml(rv.text)}</div>
+        </div>`).join('')}
+    </div>
+    <button class="submit-btn" style="margin-top:10px;background:var(--bg);color:var(--navy);border:1px solid var(--border);box-shadow:none;" onclick="openReviewModal('${r.id}')">✏️ เขียนรีวิว · +60 Moto Points</button>
+  `;
+}
+function openInMaps(lat,lng){window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,'_blank')}
+
+// ============ REVIEW MODAL ============
+function openReviewModal(rId){
+  currentReviewRestaurant=rId;
+  currentReviewStars=5;
+  document.querySelectorAll('#review-stars span').forEach(s=>s.classList.toggle('filled',parseInt(s.dataset.v,10)<=5));
+  document.getElementById('review-text').value='';
+  document.getElementById('review-modal').classList.add('show');
+}
+function closeReviewModal(){document.getElementById('review-modal').classList.remove('show')}
+document.querySelectorAll('#review-stars span').forEach(span=>{
+  span.addEventListener('click',()=>{
+    currentReviewStars=parseInt(span.dataset.v,10);
+    document.querySelectorAll('#review-stars span').forEach(s=>s.classList.toggle('filled',parseInt(s.dataset.v,10)<=currentReviewStars));
+  });
+});
+async function submitReview(){
+  const text=document.getElementById('review-text').value.trim();
+  if(!text){showToast('กรุณาเขียนรีวิว','error');return}
+  const rId=currentReviewRestaurant;
+  const review={name:currentUser?.displayName||'You',stars:currentReviewStars,date:'วันนี้',text};
+  if(!allReviews[rId])allReviews[rId]=[];
+  allReviews[rId].unshift(review);
+  await Store.addReview(rId,review);
+  userPoints+=60;
+  if(!completedMissions['review']){completedMissions['review']=Date.now()}
+  await saveUser();
+  closeReviewModal();
+  showToast('✓ รีวิวถูกเพิ่มแล้ว · +60 Moto Points');
+  openRestaurant(rId);
+}
+
+// ============ REWARDS ============
+let activeRewardCat='all';
+function filterRewards(c){activeRewardCat=c;document.querySelectorAll('.rewards-tab').forEach(t=>t.classList.toggle('active',t.dataset.cat===c));renderRewards()}
+function renderRewards(){
+  const list=document.getElementById('rewards-list');if(!list)return;
+  // My coupons
+  const myC=document.getElementById('my-coupons');
+  if(redeemed.length>0){
+    myC.innerHTML=`<div class="section-title" style="margin:0 0 10px;">🎫 คูปองของฉัน (${redeemed.length})</div>`+
+      redeemed.slice(-3).reverse().map(c=>`
+        <div class="coupon-card">
+          <div class="coupon-name">🎉 ${c.partnerName}</div>
+          <div class="coupon-discount">${c.freeText||('ลด '+c.discount+(c.percentDiscount?'%':' บาท'))}</div>
+          <div class="coupon-code">CODE: ${c.code}</div>
+          <div class="coupon-expire">หมดอายุ: ${c.expire}</div>
+        </div>`).join('')+
+      (redeemed.length>3?`<div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:14px;">+ อีก ${redeemed.length-3} คูปอง</div>`:'<div style="margin-bottom:14px;"></div>');
+  }else{myC.innerHTML=''}
+  let filtered=REWARDS;
+  if(activeRewardCat!=='all')filtered=filtered.filter(r=>r.cat===activeRewardCat);
+  list.innerHTML=`<div class="section-title" style="margin:0 0 10px;">🎁 ของรางวัลทั้งหมด</div>`+
+    filtered.map(r=>{
+      const locked=userPoints<r.cost;
+      return `<div class="reward-item ${locked?'locked':''}">
+        <div class="reward-thumb" style="background:${r.color};">${r.icon}</div>
+        <div class="reward-info">
+          <div class="reward-name">${r.name}</div>
+          <div class="reward-desc">${r.desc}</div>
+          <div class="reward-cost"><span class="star">⭐</span>${r.cost}</div>
+        </div>
+        <button class="reward-action" ${locked?'disabled':''} onclick="redeemReward('${r.id}')">${locked?'🔒 ล็อก':'แลก'}</button>
+      </div>`;
+    }).join('');
+}
+async function redeemReward(id){
+  const r=REWARDS.find(x=>x.id===id);if(!r)return;
+  if(userPoints<r.cost){showToast(`ต้องการอีก ${r.cost-userPoints} แต้ม`,'error');return}
+  if(!confirm(`แลก "${r.name}"?\nใช้ ${r.cost} Moto Points`))return;
+  userPoints-=r.cost;
+  const code='MOTO'+Date.now().toString(36).toUpperCase().slice(-6);
+  const exp=new Date(Date.now()+30*24*60*60*1000).toISOString().split('T')[0];
+  const isFree=r.discount===100;
+  const isPercent=r.discount<100&&r.cat==='food';
+  const coupon={
+    id:'rd_'+Date.now(),
+    rewardId:id,
+    partnerName:r.partnerName,
+    discount:r.discount,
+    freeText:r.freeText,
+    percentDiscount:isPercent,
+    code,date:new Date().toISOString().split('T')[0],
+    expire:exp,
+  };
+  redeemed.push(coupon);
+  await saveUser();
+  // Show coupon modal
+  document.getElementById('coupon-display').innerHTML=`
+    <div class="coupon-card" style="margin:0;">
+      <div class="coupon-name">🎉 ${r.partnerName}</div>
+      <div class="coupon-discount">${r.freeText||('ลด '+r.discount+(isPercent?'%':' บาท'))}</div>
+      <div class="coupon-code">CODE: ${code}</div>
+      <div class="coupon-expire">หมดอายุ: ${exp}</div>
+    </div>
+  `;
+  document.getElementById('coupon-modal').classList.add('show');
+  renderRewards();
+}
+function closeCouponModal(){document.getElementById('coupon-modal').classList.remove('show')}
+
+// ============ DASHBOARD ============
+function renderDashboard(){
+  if(!document.getElementById('page-dashboard').classList.contains('active'))return;
+  const total=allReports.length;
+  const acc=allReports.filter(r=>r.type==='accident').length;
+  const today=new Date().toISOString().split('T')[0];
+  const todayCount=allReports.filter(r=>r.date===today).length;
+  const avgRisk=total?(allReports.reduce((s,r)=>s+r.risk,0)/total).toFixed(1):'0.0';
+  const userReports=allReports.filter(r=>r.source!=='seed').length;
+  const users=Math.max(127,userReports*7+47);
+  document.getElementById('dash-total').textContent=total;
+  document.getElementById('dash-total-change').textContent=`+${todayCount} today`;
+  document.getElementById('dash-accidents').textContent=acc;
+  document.getElementById('dash-users').textContent=users;
+  document.getElementById('dash-risk').textContent=avgRisk;
+
+  // Bars
+  const cats={};
+  allReports.forEach(r=>{cats[r.category]=(cats[r.category]||0)+1});
+  const sortedCats=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const max=Math.max(...sortedCats.map(c=>c[1]),1);
+  document.getElementById('dash-bars').innerHTML=sortedCats.map(([k,v])=>`
+    <div class="dash-bar-row">
+      <div class="dash-bar-label">${k}</div>
+      <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${(v/max*100).toFixed(0)}%;"></div></div>
+      <div class="dash-bar-value">${v}</div>
+    </div>
+  `).join('');
+
+  // Feed — newest first, includes photos
+  const feedItems=[];
+  [...allReports].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,8).forEach(r=>{
+    feedItems.push({
+      icon:r.type==='accident'?'🚨':'⚠️',
+      cls:r.type==='accident'?'accident':'risk',
+      title:r.category+(r.notes?' · '+r.notes:''),
+      meta:`${(r.userName||'-')} · ${r.lat.toFixed(2)},${r.lng.toFixed(2)} · ${r.time}`,
+      visual:reportVisual(r,110),
+      ts:r.createdAt||0,
+    });
+  });
+  Object.values(allReviews).flat().slice(-2).forEach(rv=>{
+    feedItems.push({icon:'⭐',cls:'review',title:`รีวิวใหม่ · ${rv.stars}⭐`,meta:String(rv.text||'').substring(0,40),visual:'',ts:0});
+  });
+  feedItems.sort((a,b)=>b.ts-a.ts);
+  document.getElementById('dash-feed').innerHTML=feedItems.slice(0,10).map(f=>`
+    <div class="dash-feed-item">
+      <div class="dash-feed-icon ${f.cls}">${f.icon}</div>
+      <div class="dash-feed-content">
+        <div class="dash-feed-title">${escapeHtml(f.title)}</div>
+        <div class="dash-feed-meta">${escapeHtml(f.meta)}</div>
+        ${f.visual||''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============ SHARE ============
+function openShareModal(){
+  const url=window.location.href;
+  document.getElementById('share-link').textContent=url;
+  // QR via api
+  document.getElementById('qr-container').innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}" alt="QR">`;
+  document.getElementById('share-modal').classList.add('show');
+}
+function closeShareModal(){document.getElementById('share-modal').classList.remove('show')}
+function copyShareLink(){
+  const url=window.location.href;
+  if(navigator.share){
+    navigator.share({title:'MotoGuard',text:'แอปขับขี่ปลอดภัย ดูจุดเสี่ยงและรายงานบน MotoServer',url}).catch(()=>{});
+  }else{
+    navigator.clipboard.writeText(url).then(()=>showToast('✓ คัดลอกลิงก์แล้ว')).catch(()=>{
+      const ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();
+      try{document.execCommand('copy');showToast('✓ คัดลอกลิงก์แล้ว')}catch(_){showToast('คัดลอกไม่สำเร็จ','error')}
+      document.body.removeChild(ta);
+    });
+  }
+}
+
+// ============ MISC ============
+function showHelp(){document.getElementById('help-modal').classList.add('show')}
+function confirmSignOut(){doSignOut()}
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+// Return the best photo for a report: the uploaded one, or a stock photo matching the category
+// Returns an HTML block for a report's visual.
+// If the user uploaded a photo → show the real photo.
+// Otherwise → a clean graphic that always matches the situation (icon + Thai label).
+// Real photo URLs (Wikimedia Commons Special:FilePath — stable, redirects to real image)
+
+// Real photos (Wikimedia Commons Special:FilePath — stable redirect to actual image)
+const WIKI='https://commons.wikimedia.org/wiki/Special:FilePath/';
+// Pools of real Wikimedia photos per situation — each old/seed report gets a different one
+const SEED_PHOTOS={
+  'หลุมบ่อ':[
+    'Archbald pothole.JPG',
+    'Potholed road - geograph.org.uk - 1534809.jpg',
+    'Potholed road - geograph.org.uk - 164053.jpg',
+    'Pothole tram track, Manchester.jpg',
+    'A pothole by Long Lane - geograph.org.uk - 2565265.jpg',
+    'Schlagloch in Dresden Reichenbachstraße.jpg',
+    'Vddj-2.jpg',
+  ],
+  'พื้นผิวชำรุด':[
+    '002 Damaged road surface background - cracked asphalt blacktop in Spain.jpg',
+    'Calder Street - Thornes Lane Wharf - geograph.org.uk - 4272625.jpg',
+    'Cold Edge Road - geograph.org.uk - 1422941.jpg',
+    'Willowfield Terrace - Willowfield Road - geograph.org.uk - 3804073.jpg',
+    'Schlagloch Lingnerallee, Dresden (57).jpg',
+    'Pot Holes and Patch Repairs on the Roads, Sheffield - geograph.org.uk - 3807006.jpg',
+  ],
+  'ถนนลื่น':[
+    'Pothole tram track, Manchester.jpg',
+    'Albert Terrace - looking towards Cleckheaton Road - geograph.org.uk - 2738214.jpg',
+    'Potholed road - geograph.org.uk - 164053.jpg',
+  ],
+  'รถล้ม':[
+    'Motorcycle accident in Braga.jpg',
+    'North West Air Ambulance - Road accident on approach.jpg',
+    'N1 north accident under Atterbury Road bridge - 10Mar10 - panoramio.jpg',
+  ],
+  'รถชน':[
+    'Car crash nobody hurt airbags deployed.jpg',
+    'Car crash scene with police nobody hurt.jpg',
+    'Nehoda policejního auta u zastávky Grohova (2).jpg',
+    'September 26, 2007 accident, highway 9, CT, flipped truck.jpg',
+    'September 26, 2007 accident, highway 9, CT.jpg',
+  ],
+  'ทางโค้งอันตราย':[
+    'Motorcycle accident in Braga.jpg',
+    'N1 north accident under Atterbury Road bridge - 10Mar10 - panoramio.jpg',
+    'North West Air Ambulance - Road accident on approach.jpg',
+  ],
+  'สัญญาณไฟเสีย':[
+    'Car crash nobody hurt airbags deployed.jpg',
+    'Nehoda policejního auta u zastávky Grohova (2).jpg',
+    'Car crash scene with police nobody hurt.jpg',
+  ],
+  'สิ่งกีดขวาง':[
+    'Minor rockfall on Angeles Crest Highway 2014-11-05.jpg',
+    'FEMA - 39940 - Damaged road with snow in Washington.jpg',
+    'Pot Holes and Patch Repairs on the Roads, Sheffield - geograph.org.uk - 3807006.jpg',
+  ],
+  'ไฟส่องสว่างชำรุด':[
+    'Potholed road - geograph.org.uk - 1534809.jpg',
+    'Cold Edge Road - geograph.org.uk - 1422941.jpg',
+    'Calder Street - Thornes Lane Wharf - geograph.org.uk - 4272625.jpg',
+  ],
+  'ทัศนวิสัยต่ำ':[
+    'FEMA - 39940 - Damaged road with snow in Washington.jpg',
+    'Minor rockfall on Angeles Crest Highway 2014-11-05.jpg',
+  ],
+};
+SEED_PHOTOS['รถจักรยานยนต์ล้ม']=SEED_PHOTOS['รถล้ม'];
+SEED_PHOTOS['รถชนกัน']=SEED_PHOTOS['รถชน'];
+function hashStr(s){let h=2166136261;s=String(s||'');for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return Math.abs(h)}
+function seedPhotoUrl(r){
+  const cat=String(r&&r.category||'');
+  const pool=SEED_PHOTOS[cat]||((r&&r.type==='accident')
+    ? ['Motorcycle accident in Braga.jpg','North West Air Ambulance - Road accident on approach.jpg']
+    : ['002 Damaged road surface background - cracked asphalt blacktop in Spain.jpg','Cold Edge Road - geograph.org.uk - 1422941.jpg']);
+  // Deterministic pick by report id → same report keeps same photo, different reports differ
+  const key=String((r&&r.id)||(r&&r.createdAt)||'x');
+  const file=pool[hashStr(key)%pool.length];
+  return WIKI+encodeURIComponent(file)+'?width=600';
+}
+
+function reportVisual(r,h){
+  h=h||120;
+  // User-uploaded photo → always show the real photo the reporter attached.
+  if(r&&r.photo){
+    return `<div style="position:relative;width:100%;height:${h}px;border-radius:10px;overflow:hidden;margin:6px 0;background:#0f172a;">
+      <img src="${r.photo}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:10px;">
+      <div style="position:absolute;bottom:6px;right:8px;font-size:9px;font-weight:700;color:#fff;background:rgba(0,0,0,0.55);padding:2px 8px;border-radius:8px;backdrop-filter:blur(4px);">📷 รูปจากผู้รายงาน</div>
+    </div>`;
+  }
+  // No uploaded photo (seed / old reports) → show a real photo matching the situation.
+  const isAcc=r&&r.type==='accident';
+  return `<div style="position:relative;width:100%;height:${h}px;border-radius:10px;overflow:hidden;margin:6px 0;background:#1e293b;">
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:11px;font-weight:600;">${isAcc?'🚨':'⚠️'} ${escapeHtml(String(r&&r.category||''))}</div>
+    <img src="${seedPhotoUrl(r)}" referrerpolicy="no-referrer" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:10px;" onerror="this.style.display='none'">
+    <div style="position:absolute;bottom:6px;right:8px;font-size:9px;font-weight:700;color:#fff;background:rgba(0,0,0,0.55);padding:2px 8px;border-radius:8px;backdrop-filter:blur(4px);">🖼️ ภาพประกอบ</div>
+  </div>`;
+}
+// Lighten/darken a hex color by percent (-100..100)
+function shade(hex,percent){
+  hex=String(hex||'#888').replace('#','');
+  if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');
+  let r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);
+  const t=percent<0?0:255,p=Math.abs(percent)/100;
+  r=Math.round((t-r)*p)+r;g=Math.round((t-g)*p)+g;b=Math.round((t-b)*p)+b;
+  return '#'+[r,g,b].map(x=>Math.max(0,Math.min(255,x)).toString(16).padStart(2,'0')).join('');
+}
+
+let toastTimer;
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast show'+(type==='error'?' error':type==='warn'?' warn':'');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// Close modal on backdrop click
+document.querySelectorAll('.modal-backdrop').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')});
+});
+
+// Auto-start as demo user, or restore Firebase session
+function startAsDemo(){
+  let u=localStorage.getItem(DEMO_USER_KEY);
+  if(!u){
+    u=JSON.stringify({uid:'demo_'+Math.random().toString(36).slice(2,10),displayName:'ผู้ใช้',email:'demo@local'});
+    localStorage.setItem(DEMO_USER_KEY,u);
+  }
+  const user=JSON.parse(u);
+  silentSignIn({...user,mode:'demo'});
+}
+
+// Same as onSignedIn but no welcome toast
+async function silentSignIn(user){
+  // Disconnect previous listeners (in case of re-login)
+  if(unsubReports){try{unsubReports()}catch{}unsubReports=null}
+  currentUser=user;
+  isFirebaseMode=user.mode==='firebase';
+  const dot=document.querySelector('.server-dot');
+  if(dot)dot.className='server-dot'+(firebaseConnected?'':' offline');
+  await loadData();
+  await purgeTestReports();
+  Store.listenReports(handleReportsUpdate);
+  // Refresh all visible UI
+  updateAllDisplays();
+  refreshHeatmap();refreshDashMap();renderNotifications();renderDashboard();
+  setTimeout(initMainMap,200);
+  navigate('home');
+}
+
+// ============ INIT ============
+(async function(){
+  // Auto-init Firebase on page load (config is hardcoded)
+  const fbReady=tryInitFirebase();
+  if(fbReady){
+    // Check if there's a previously logged-in Firebase user
+    let restored=false;
+    fbAuth.onAuthStateChanged(user=>{
+      if(restored)return;
+      restored=true;
+      if(user&&localStorage.getItem(AUTH_MODE_KEY)==='firebase'){
+        silentSignIn({uid:user.uid,email:user.email,displayName:user.displayName||user.email.split('@')[0],mode:'firebase'});
+      }else{
+        startAsDemo();
+      }
+    });
+    // Fallback if onAuthStateChanged doesn't fire within 2s
+    setTimeout(()=>{if(!currentUser){restored=true;startAsDemo()}},2000);
+  }else{
+    // Firebase not available (offline?) — fall back to demo
+    startAsDemo();
+  }
+})();
+</script>
+</body>
+</html>
