@@ -23,8 +23,8 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html,body{font-family:'Prompt',system-ui,sans-serif;background:linear-gradient(135deg,#cbd5e1 0%,#94a3b8 100%);min-height:100vh;color:var(--text);-webkit-font-smoothing:antialiased;height:100vh;overflow:hidden}
 body{display:flex;align-items:center;justify-content:center}
-.app-frame{width:100%;max-width:420px;height:100vh;max-height:920px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 30px 80px rgba(0,0,0,0.3)}
-@media(min-width:500px){body{padding:16px}.app-frame{border-radius:36px;box-shadow:0 30px 80px rgba(0,0,0,0.3),0 0 0 8px #1a1a1a;height:92vh;min-height:720px}}
+.app-frame{aspect-ratio:9/16;height:100vh;width:auto;max-width:100vw;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 30px 80px rgba(0,0,0,0.3)}
+@media(min-width:500px){body{padding:16px}.app-frame{border-radius:36px;box-shadow:0 30px 80px rgba(0,0,0,0.3),0 0 0 8px #1a1a1a;height:96vh}}
 
 /* Header */
 .app-header{background:linear-gradient(135deg,var(--navy-deep) 0%,var(--navy) 60%,var(--navy-light) 100%);color:#fff;padding:16px 18px 12px;flex-shrink:0;position:relative;z-index:20}
@@ -529,20 +529,20 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
   <!-- HOME -->
   <main class="page active" id="page-home">
     <div class="hero-card">
-      <div class="hero-greeting">สวัสดี 👋</div>
+      <div class="hero-greeting" data-i18n="hero.greeting">สวัสดี 👋</div>
       <div class="hero-name" id="hero-name">ผู้ใช้</div>
       <div class="hero-stats">
         <div class="hero-stat">
           <div class="hero-stat-value gold" id="hero-points">99</div>
-          <div class="hero-stat-label">⭐ Moto Point</div>
+          <div class="hero-stat-label" data-i18n="hero.points">⭐ Moto Point</div>
         </div>
         <div class="hero-stat">
           <div class="hero-stat-value" id="hero-reports">0</div>
-          <div class="hero-stat-label">รายงานของคุณ</div>
+          <div class="hero-stat-label" data-i18n="hero.reports">รายงานของคุณ</div>
         </div>
         <div class="hero-stat">
           <div class="hero-stat-value" id="hero-streak">7</div>
-          <div class="hero-stat-label">วันต่อเนื่อง</div>
+          <div class="hero-stat-label" data-i18n="hero.streak">วันต่อเนื่อง</div>
         </div>
       </div>
     </div>
@@ -583,7 +583,7 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
     </div>
 
     <div class="card map-card">
-      <h2>🔥 แผนที่จุดเสี่ยง</h2>
+      <h2 data-i18n="home.maptitle">🔥 แผนที่จุดเสี่ยง</h2>
       <div class="subt">ประเทศไทย</div>
       <div id="heatmap"></div>
       <div class="map-legend">
@@ -604,14 +604,14 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
   <!-- GAMES -->
   <main class="page" id="page-games">
     <div class="games-hero">
-      <h2>🎮 GAMES ZONE</h2>
+      <h2 data-i18n="games.title">🎮 GAMES ZONE</h2>
       <p>ฝึกการตัดสินใจในสถานการณ์เสี่ยง สะสม Moto Points</p>
     </div>
     <div class="game-card brake" onclick="openBrakeOrCrash()">
       <div class="game-card-icon">🏍️</div>
       <div class="game-card-text">
         <div class="game-card-title">Brake or Crash</div>
-        <div class="game-card-desc">เกมเรียลไทม์ — ขับมอเตอร์ไซค์ หลบรถ เบรกที่ไฟแดง สะสมคะแนน</div>
+        <div class="game-card-desc" data-i18n="game.bc">เกมเรียลไทม์ — ขับมอเตอร์ไซค์ หลบรถ เบรกที่ไฟแดง สะสมคะแนน</div>
       </div>
       <div class="game-card-arrow">›</div>
     </div>
@@ -619,7 +619,7 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
       <div class="game-card-icon">🏆</div>
       <div class="game-card-text">
         <div class="game-card-title">Safe Rider League</div>
-        <div class="game-card-desc">ทำภารกิจปลอดภัยในชีวิตจริง สะสมคะแนนแลกของรางวัล</div>
+        <div class="game-card-desc" data-i18n="games.leaguedesc">ทำภารกิจปลอดภัยในชีวิตจริง สะสมคะแนนแลกของรางวัล</div>
       </div>
       <div class="game-card-arrow">›</div>
     </div>
@@ -640,8 +640,8 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
   <main class="page" id="page-safe-rider">
     <button class="back-btn" onclick="navigate('games')">← กลับ</button>
     <div class="games-hero">
-      <h2>🏆 SAFE RIDER LEAGUE</h2>
-      <p>ทำภารกิจ สะสมคะแนน เก็บแต้มไปแลกของรางวัล</p>
+      <h2 data-i18n="league.title">🏆 SAFE RIDER LEAGUE</h2>
+      <p data-i18n="league.sub">ทำภารกิจ สะสมคะแนน เก็บแต้มไปแลกของรางวัล</p>
     </div>
     <div id="missions-list"></div>
   </main>
@@ -718,15 +718,15 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
   <!-- MOTOGUIDE -->
   <main class="page" id="page-guide">
     <div class="guide-hero">
-      <h2>🍜 MOTOGUIDE</h2>
+      <h2 data-i18n="guide.title">🍜 MOTOGUIDE</h2>
       <p>รีวิวร้านอาหาร <b id="guide-count">50</b> ร้านใกล้ ม.มหิดล ศาลายา · พร้อมส่วนลดสำหรับสมาชิก MotoGuard</p>
       <div class="guide-search">
         <span>🔍</span>
-        <input type="text" placeholder="ค้นหาร้าน..." id="guide-search-input" oninput="renderRestaurants()">
+        <input type="text" placeholder="ค้นหาร้าน..." data-i18n-ph="guide.search" id="guide-search-input" oninput="renderRestaurants()">
       </div>
     </div>
     <div style="font-size:12px;color:var(--muted);margin:6px 4px 8px;text-align:center;">
-      📊 <b id="guide-result-count">0</b> ร้านที่ตรงกับการค้นหา
+      📊 <b id="guide-result-count">0</b> <span data-i18n="guide.results">ร้านที่ตรงกับการค้นหา</span>
     </div>
     <div class="cuisine-filters" id="cuisine-filters"></div>
     <div id="restaurants-list"></div>
@@ -742,14 +742,14 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
     <div class="report-bg">
       <div class="report-spacer">
         <div class="icon">📍</div>
-        <div>เลือกประเภทรายงาน</div>
+        <div data-i18n="report.choose">เลือกประเภทรายงาน</div>
         <div style="font-size:11px;margin-top:6px;">รายงานจะส่งไป MotoServer<br>ผู้ใช้คนอื่นจะเห็นภายในไม่กี่วินาที</div>
       </div>
       <div class="report-options">
         <div class="report-option risk">
           <div class="opt-icon">⚠️</div>
           <div style="flex:1;">
-            <div class="opt-text">แจ้งจุดเสี่ยง</div>
+            <div class="opt-text" data-i18n="opt.risk">แจ้งจุดเสี่ยง</div>
             <div class="opt-desc">ถนนชำรุด, ลื่น, สิ่งกีดขวาง</div>
           </div>
           <button class="report-add-btn" onclick="openReportForm('risk')">Add</button>
@@ -757,7 +757,7 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
         <div class="report-option accident">
           <div class="opt-icon">🚨</div>
           <div style="flex:1;">
-            <div class="opt-text">แจ้งอุบัติเหตุ</div>
+            <div class="opt-text" data-i18n="opt.accident">แจ้งอุบัติเหตุ</div>
             <div class="opt-desc">รถชน, รถล้ม, มีผู้บาดเจ็บ</div>
           </div>
           <button class="report-add-btn" onclick="openReportForm('accident')">Add</button>
@@ -770,11 +770,11 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
   <main class="page" id="page-report-form">
     <button class="back-btn" onclick="navigate('report')">← กลับ</button>
     <div class="form-field">
-      <label class="form-label">📅 วันที่ <span class="en">(Date)</span></label>
+      <label class="form-label" data-i18n="rf.date">📅 วันที่</label>
       <input type="date" class="form-input" id="form-date">
     </div>
     <div class="form-field">
-      <label class="form-label">🏷️ ประเภทเหตุการณ์ <span class="en">(Type)</span></label>
+      <label class="form-label" data-i18n="rf.type">🏷️ ประเภทเหตุการณ์</label>
       <select class="form-select" id="form-type">
         <option value="">-- เลือกประเภท --</option>
         <option value="ถนนลื่น">💧 ถนนลื่น</option>
@@ -790,7 +790,7 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
       </select>
     </div>
     <div class="form-field">
-      <label class="form-label">📍 ตำแหน่ง <span class="en">(Location)</span></label>
+      <label class="form-label" data-i18n="rf.loc">📍 ตำแหน่ง</label>
       <div id="report-mini-map"></div>
       <div style="font-size:11px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:6px;">
         <span style="display:inline-block;width:8px;height:8px;background:var(--red);border-radius:50%;"></span>
@@ -799,17 +799,17 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
       <button type="button" onclick="useCurrentLocation()" style="margin-top:8px;background:var(--bg);border:1px solid var(--border);padding:6px 10px;border-radius:8px;font-family:inherit;font-size:11px;color:var(--navy);font-weight:600;cursor:pointer;">📍 ใช้ตำแหน่งปัจจุบัน</button>
     </div>
     <div class="form-field">
-      <label class="form-label">📊 ระดับความเสี่ยง <span class="en">(Risk Level)</span></label>
+      <label class="form-label" data-i18n="rf.risk">📊 ระดับความเสี่ยง</label>
       <input type="range" min="1" max="10" value="7" class="risk-slider" id="risk-level" oninput="updateRisk()">
       <div class="risk-labels"><span>1 ต่ำ</span><span>5 กลาง</span><span>10 สูง</span></div>
       <div class="risk-current" id="risk-level-value">7 / 10</div>
     </div>
     <div class="form-field">
-      <label class="form-label">📍 พื้นที่ที่ได้รับผลกระทบ <span class="en">(Affected Area)</span></label>
-      <input type="text" class="form-input" id="form-area" placeholder="เช่น เลนซ้าย, ทางแยก">
+      <label class="form-label" data-i18n="rf.area">📍 พื้นที่ที่ได้รับผลกระทบ</label>
+      <input type="text" class="form-input" id="form-area" placeholder="เช่น เลนซ้าย, ทางแยก" data-i18n-ph="rf.areaph">
     </div>
     <div class="form-field">
-      <label class="form-label">📷 รูปภาพประกอบ <span class="en" style="color:#dc2626;">* จำเป็นต้องแนบ</span></label>
+      <label class="form-label"><span data-i18n="rf.photo">📷 รูปภาพประกอบ</span> <span class="en" style="color:#dc2626;" data-i18n="rf.photoreq">* จำเป็นต้องแนบ</span></label>
       <label class="photo-upload" for="form-photo">
         <span class="photo-upload-icon" id="photo-icon">📷</span>
         <span class="photo-upload-text" id="photo-text">แตะเพื่อถ่ายภาพ / เลือกรูป (จำเป็น)</span>
@@ -818,16 +818,16 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
       </label>
     </div>
     <div class="form-field">
-      <label class="form-label">⏰ เวลาที่พบ <span class="en">(Time Observed)</span></label>
+      <label class="form-label" data-i18n="rf.time">⏰ เวลาที่พบ</label>
       <input type="time" class="form-input" id="form-time" style="font-family:'Courier New',monospace;font-size:18px;font-weight:700;letter-spacing:2px;background:#0f172a;color:#4ade80;border-color:#1e293b;">
       <div style="font-size:11px;color:var(--muted);margin-top:6px;">แตะที่ช่องเพื่อเปลี่ยนเวลา</div>
     </div>
     <div class="form-field">
-      <label class="form-label">📝 รายละเอียดเพิ่มเติม <span class="en">(Notes)</span></label>
-      <textarea class="form-textarea" id="form-notes" placeholder="คำอธิบายเหตุการณ์เพิ่มเติม..."></textarea>
+      <label class="form-label" data-i18n="rf.notes">📝 รายละเอียดเพิ่มเติม</label>
+      <textarea class="form-textarea" id="form-notes" placeholder="คำอธิบายเหตุการณ์เพิ่มเติม..." data-i18n-ph="rf.notesph"></textarea>
     </div>
     <div class="form-field">
-      <label class="form-label">✅ การยืนยัน <span class="en">(Verification)</span></label>
+      <label class="form-label" data-i18n="rf.verify">✅ การยืนยัน</label>
       <div class="verify-option selected" data-verify="confirmed" onclick="selectVerify(this)">
         <div class="verify-radio"></div>
         <div>
@@ -843,7 +843,7 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
         </div>
       </div>
     </div>
-    <button class="submit-btn" onclick="submitReport()"><span>📤</span> ส่งรายงานไปยัง MotoServer</button>
+    <button class="submit-btn" onclick="submitReport()"><span>📤</span> <span data-i18n="report.submit">ส่งรายงานไปยัง MotoServer</span></button>
   </main>
 
   <!-- REPORTS LIST -->
@@ -885,46 +885,42 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
       </div>
     </div>
     <div class="settings-card">
-      <div class="settings-section-label">🔗 แชร์และเชื่อมต่อ</div>
-      <div class="settings-row" onclick="openShareModal()">
-        <div class="row-left"><span class="row-icon">📤</span> แชร์แอป MotoGuard</div>
-        <span class="arrow">›</span>
-      </div>
+      <div class="settings-section-label" data-i18n="set.connect">🔗 เชื่อมต่อ</div>
       <div class="settings-row" onclick="navigate('dashboard')">
-        <div class="row-left"><span class="row-icon">📊</span> MotoServer Dashboard</div>
+        <div class="row-left"><span class="row-icon">📊</span> <span data-i18n="set.dashboard">MotoServer Dashboard</span></div>
         <span class="arrow">›</span>
       </div>
       <div class="settings-row" onclick="navigate('reports-list')">
-        <div class="row-left"><span class="row-icon">📋</span> รายงานทั้งหมด</div>
+        <div class="row-left"><span class="row-icon">📋</span> <span data-i18n="set.allreports">รายงานทั้งหมด</span></div>
         <span class="arrow">›</span>
       </div>
       <div class="settings-row" onclick="requestNotificationPermission()">
-        <div class="row-left"><span class="row-icon">🔔</span> เปิดการแจ้งเตือน</div>
+        <div class="row-left"><span class="row-icon">🔔</span> <span data-i18n="set.notif">เปิดการแจ้งเตือน</span></div>
         <span class="arrow">›</span>
       </div>
     </div>
     <div class="settings-card">
-      <div class="settings-section-label">บัญชีของฉัน</div>
+      <div class="settings-section-label" data-i18n="set.account">บัญชีของฉัน</div>
       <div class="settings-row">
-        <div class="row-left"><span class="row-icon">📧</span> อีเมล</div>
+        <div class="row-left"><span class="row-icon">📧</span> <span data-i18n="set.email">อีเมล</span></div>
         <span class="version-text" id="profile-email-display">-</span>
       </div>
       <div class="settings-row">
-        <div class="row-left"><span class="row-icon">🔌</span> โหมด</div>
+        <div class="row-left"><span class="row-icon">🔌</span> <span data-i18n="set.mode">โหมด</span></div>
         <span class="version-text" id="profile-mode-display">💻 Demo</span>
       </div>
     </div>
     <div class="settings-card">
       <div class="settings-section-label">General</div>
       <div class="settings-row" onclick="showHelp()">
-        <div class="row-left"><span class="row-icon">📖</span> วิธีใช้งาน</div><span class="arrow">›</span>
+        <div class="row-left"><span class="row-icon">📖</span> <span data-i18n="set.howto">วิธีใช้งาน</span></div><span class="arrow">›</span>
       </div>
     </div>
     <div class="settings-card">
-      <div class="settings-section-label">App Setting</div>
-      <div class="settings-row">
-        <div class="row-left"><span class="row-icon">🌐</span> Language</div>
-        <span class="lang-toggle">🇹🇭 ไทย | 🇬🇧 Eng</span>
+      <div class="settings-section-label" data-i18n="set.app">App Setting</div>
+      <div class="settings-row" onclick="toggleLang()" style="cursor:pointer;">
+        <div class="row-left"><span class="row-icon">🌐</span> <span data-i18n="set.language">Language</span></div>
+        <span class="lang-toggle" id="lang-toggle"><b style="color:var(--gold);">🇹🇭 ไทย</b> | 🇬🇧 Eng</span>
       </div>
     </div>
     <div class="settings-card">
@@ -1011,21 +1007,6 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
 </div>
 
 <div class="toast" id="toast"></div>
-
-<!-- SHARE MODAL -->
-<div class="modal-backdrop" id="share-modal">
-  <div class="modal-card">
-    <div class="modal-icon">📤</div>
-    <div class="modal-title">แชร์ MotoGuard</div>
-    <div class="modal-text">ทุกคนที่เปิดลิงก์จะเห็นรายงานเดียวกันบน MotoServer แบบเรียลไทม์</div>
-    <div class="qr-container" id="qr-container"></div>
-    <div class="modal-share-link" id="share-link"></div>
-    <div class="modal-buttons">
-      <button class="modal-btn secondary" onclick="closeShareModal()">ปิด</button>
-      <button class="modal-btn primary" onclick="copyShareLink()">📋 คัดลอกลิงก์</button>
-    </div>
-  </div>
-</div>
 
 <!-- REVIEW MODAL -->
 <div class="modal-backdrop" id="review-modal">
@@ -1564,6 +1545,8 @@ function navigate(page){
   if(page==='rewards')renderRewards();
   if(page==='guide'){renderCuisineFilters();renderRestaurants()}
   if(page==='dashboard'){setTimeout(initDashMap,100);renderDashboard()}
+  // Re-apply the selected language to whatever just rendered
+  if(typeof applyLang==='function')applyLang(currentLang);
 }
 
 // ============ MAPS ============
@@ -2599,28 +2582,89 @@ function renderDashboard(){
 }
 
 // ============ SHARE ============
-function openShareModal(){
-  const url=window.location.href;
-  document.getElementById('share-link').textContent=url;
-  // QR via api
-  document.getElementById('qr-container').innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}" alt="QR">`;
-  document.getElementById('share-modal').classList.add('show');
-}
-function closeShareModal(){document.getElementById('share-modal').classList.remove('show')}
-function copyShareLink(){
-  const url=window.location.href;
-  if(navigator.share){
-    navigator.share({title:'MotoGuard',text:'แอปขับขี่ปลอดภัย ดูจุดเสี่ยงและรายงานบน MotoServer',url}).catch(()=>{});
-  }else{
-    navigator.clipboard.writeText(url).then(()=>showToast('✓ คัดลอกลิงก์แล้ว')).catch(()=>{
-      const ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();
-      try{document.execCommand('copy');showToast('✓ คัดลอกลิงก์แล้ว')}catch(_){showToast('คัดลอกไม่สำเร็จ','error')}
-      document.body.removeChild(ta);
-    });
-  }
-}
-
 // ============ MISC ============
+// ===== Language / i18n system =====
+const I18N={
+  th:{
+    'nav.home':'Home','nav.games':'Games','nav.guide':'Guide','nav.profile':'Profile',
+    'hero.greeting':'สวัสดี 👋',
+    'hero.points':'⭐ Moto Point','hero.reports':'รายงานของคุณ','hero.streak':'วันต่อเนื่อง',
+    'home.maptitle':'🔥 แผนที่จุดเสี่ยง','home.mapsub':'ประเทศไทย',
+    'demo.title':'โหมด Demo · ใช้งานชั่วคราว','demo.sub':'เข้าสู่ระบบเพื่อเก็บแต้มและภารกิจไว้ข้ามอุปกรณ์',
+    'games.title':'🎮 GAMES ZONE',
+    'games.leaguedesc':'ทำภารกิจปลอดภัยในชีวิตจริง สะสมคะแนนแลกของรางวัล',
+    'games.missiondone':'ภารกิจที่ทำสำเร็จ',
+    'league.title':'🏆 SAFE RIDER LEAGUE','league.sub':'ทำภารกิจ สะสมคะแนน เก็บแต้มไปแลกของรางวัล',
+    'guide.title':'🍜 MOTOGUIDE',
+    'report.choose':'เลือกประเภทรายงาน','report.note':'รายงานจะส่งไป MotoServer ผู้ใช้คนอื่นจะเห็นภายในไม่กี่วินาที',
+    'report.risk':'แจ้งจุดเสี่ยง','report.accident':'แจ้งอุบัติเหตุ',
+    'report.submit':'📤 ส่งรายงานไปยัง MotoServer',
+    'reports.alltitle':'📋 รายงานทั้งหมดจาก MotoServer',
+    'set.connect':'🔗 เชื่อมต่อ','set.dashboard':'MotoServer Dashboard','set.allreports':'รายงานทั้งหมด',
+    'set.notif':'เปิดการแจ้งเตือน','set.account':'บัญชีของฉัน','set.email':'อีเมล','set.mode':'โหมด',
+    'set.howto':'วิธีใช้งาน','set.contact':'Contact us','set.security':'Security Policy',
+    'set.app':'ตั้งค่าแอป','set.language':'ภาษา',
+    'profile.signin':'เข้าสู่ระบบ / สมัครสมาชิก','profile.signout':'ออกจากระบบ (Sign Out)',
+    'guide.search':'ค้นหาร้าน...','guide.results':'ร้านที่ตรงกับการค้นหา',
+    'rf.date':'📅 วันที่','rf.type':'🏷️ ประเภทเหตุการณ์','rf.loc':'📍 ตำแหน่ง',
+    'rf.risk':'📊 ระดับความเสี่ยง','rf.area':'📍 พื้นที่ที่ได้รับผลกระทบ','rf.photo':'📷 รูปภาพประกอบ',
+    'rf.time':'⏰ เวลาที่พบ','rf.notes':'📝 รายละเอียดเพิ่มเติม','rf.verify':'✅ การยืนยัน',
+    'rf.areaph':'เช่น เลนซ้าย, ทางแยก','rf.notesph':'คำอธิบายเหตุการณ์เพิ่มเติม...',
+    'rf.photoreq':'* จำเป็นต้องแนบ',
+    'game.bc':'เกมเรียลไทม์ — ขับมอเตอร์ไซค์ หลบรถ เบรกที่ไฟแดง สะสมคะแนน',
+    'opt.risk':'แจ้งจุดเสี่ยง','opt.accident':'แจ้งอุบัติเหตุ',
+  },
+  en:{
+    'nav.home':'Home','nav.games':'Games','nav.guide':'Guide','nav.profile':'Profile',
+    'hero.greeting':'Hello 👋',
+    'hero.points':'⭐ Moto Point','hero.reports':'Your Reports','hero.streak':'Day Streak',
+    'home.maptitle':'🔥 Risk Zone Map','home.mapsub':'Thailand',
+    'demo.title':'Demo Mode · Temporary','demo.sub':'Sign in to save points & missions across devices',
+    'games.title':'🎮 GAMES ZONE',
+    'games.leaguedesc':'Complete real-life safety missions, earn points for rewards',
+    'games.missiondone':'Missions Completed',
+    'league.title':'🏆 SAFE RIDER LEAGUE','league.sub':'Do missions, collect points, redeem rewards',
+    'guide.title':'🍜 MOTOGUIDE',
+    'report.choose':'Select Report Type','report.note':'Reports go to MotoServer — other users see them within seconds',
+    'report.risk':'Report Risk Zone','report.accident':'Report Accident',
+    'report.submit':'📤 Send Report to MotoServer',
+    'reports.alltitle':'📋 All Reports from MotoServer',
+    'set.connect':'🔗 Connect','set.dashboard':'MotoServer Dashboard','set.allreports':'All Reports',
+    'set.notif':'Enable Notifications','set.account':'My Account','set.email':'Email','set.mode':'Mode',
+    'set.howto':'How to Use','set.contact':'Contact us','set.security':'Security Policy',
+    'set.app':'App Setting','set.language':'Language',
+    'profile.signin':'Sign In / Sign Up','profile.signout':'Sign Out',
+    'guide.search':'Search restaurants...','guide.results':'restaurants match your search',
+    'rf.date':'📅 Date','rf.type':'🏷️ Event Type','rf.loc':'📍 Location',
+    'rf.risk':'📊 Risk Level','rf.area':'📍 Affected Area','rf.photo':'📷 Photo Evidence',
+    'rf.time':'⏰ Time Observed','rf.notes':'📝 Additional Notes','rf.verify':'✅ Verification',
+    'rf.areaph':'e.g. left lane, junction','rf.notesph':'Describe the situation in more detail...',
+    'rf.photoreq':'* Required',
+    'game.bc':'Real-time game — ride a motorcycle, dodge cars, brake at red lights, earn points',
+    'opt.risk':'Report Risk Zone','opt.accident':'Report Accident',
+  },
+};
+let currentLang='th';
+function applyLang(lang){
+  currentLang=(lang==='en')?'en':'th';
+  const dict=I18N[currentLang];
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n');
+    if(dict[k]!==undefined)el.textContent=dict[k];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const k=el.getAttribute('data-i18n-ph');
+    if(dict[k]!==undefined)el.setAttribute('placeholder',dict[k]);
+  });
+  document.documentElement.lang=currentLang;
+  const lt=document.getElementById('lang-toggle');
+  if(lt)lt.innerHTML=currentLang==='th'
+    ? '<b style="color:var(--gold);">🇹🇭 ไทย</b> | 🇬🇧 Eng'
+    : '🇹🇭 ไทย | <b style="color:var(--gold);">🇬🇧 Eng</b>';
+  try{localStorage.setItem('mg:lang',currentLang)}catch(e){}
+}
+function toggleLang(){applyLang(currentLang==='th'?'en':'th')}
+
 function showHelp(){document.getElementById('help-modal').classList.add('show')}
 function confirmSignOut(){doSignOut()}
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
@@ -2780,6 +2824,8 @@ async function silentSignIn(user){
 
 // ============ INIT ============
 (async function(){
+  // Restore saved language preference
+  try{applyLang(localStorage.getItem('mg:lang')||'th')}catch(e){applyLang('th')}
   // Auto-init Firebase on page load (config is hardcoded)
   const fbReady=tryInitFirebase();
   if(fbReady){
