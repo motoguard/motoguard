@@ -653,6 +653,7 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
       <div class="game-stats">
         <div class="game-stat"><span class="icon">❤️</span><span id="game-health">3</span></div>
         <div class="game-stat score"><span class="icon">⭐</span><span id="game-score">0</span></div>
+        <div class="game-stat" id="game-combo-stat" style="display:none;background:rgba(249,115,22,0.25);"><span class="icon">🔥</span><span id="game-combo">0</span></div>
         <div class="game-stat"><span class="icon">🚀</span><span id="game-speed">1.0x</span></div>
       </div>
     </div>
@@ -700,11 +701,16 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
         <div class="game-over-card">
           <div class="go-icon">💥</div>
           <div class="go-title">GAME OVER</div>
-          <div class="go-subtitle">ลองใหม่ดูสิ!</div>
+          <div class="go-subtitle" id="go-subtitle">ลองใหม่ดูสิ!</div>
           <div class="go-stats">
             <div class="go-stat"><div class="go-stat-value" id="go-score">0</div><div class="go-stat-label">Score</div></div>
             <div class="go-stat"><div class="go-stat-value" id="go-points">+0</div><div class="go-stat-label">Points</div></div>
             <div class="go-stat"><div class="go-stat-value" id="go-survived">0s</div><div class="go-stat-label">Survived</div></div>
+          </div>
+          <div class="go-stat" style="margin:0 0 12px;"><div class="go-stat-value" id="go-best" style="color:var(--gold);">0</div><div class="go-stat-label">🏆 Best Score</div></div>
+          <div id="go-safety" style="background:linear-gradient(135deg,#1e3a5f,#0f2942);border:1px solid #2563eb;border-radius:12px;padding:12px 14px;margin-bottom:14px;text-align:left;">
+            <div style="font-size:12px;font-weight:800;color:#60a5fa;margin-bottom:5px;">🛡️ บทเรียนความปลอดภัย</div>
+            <div id="go-safety-text" style="font-size:12px;color:#cbd5e1;line-height:1.6;"></div>
           </div>
           <div class="go-buttons">
             <button class="go-btn secondary" onclick="exitGame()">ออก</button>
@@ -1824,7 +1830,7 @@ async function purgeTestReports(){
 }
 
 // ============ BRAKE OR CRASH GAME ============
-const game={running:false,health:3,score:0,lane:'center',braking:false,obstacles:[],lastSpawn:0,spawnInterval:1500,startTime:0,obstacleId:0,rafId:null,canvasW:0,canvasH:0};
+const game={running:false,health:3,score:0,lane:'center',braking:false,obstacles:[],lastSpawn:0,spawnInterval:1500,startTime:0,obstacleId:0,rafId:null,canvasW:0,canvasH:0,combo:0,maxCombo:0,mistakes:{},perfectCount:0};
 
 function openBrakeOrCrash(){
   document.getElementById('page-brake-game').classList.add('active');
@@ -1839,10 +1845,12 @@ function exitGame(){
 }
 function resetGameUI(){
   game.health=3;game.score=0;game.lane='center';game.braking=false;game.obstacles=[];game.spawnInterval=1500;
+  game.combo=0;game.maxCombo=0;game.mistakes={};game.perfectCount=0;
   document.getElementById('game-health').textContent='3';
   document.getElementById('game-score').textContent='0';
   document.getElementById('game-speed').textContent='1.0x';
   document.getElementById('obstacles-container').innerHTML='';
+  const cs=document.getElementById('game-combo-stat');if(cs)cs.style.display='none';
   const m=document.getElementById('motorcycle');
   m.classList.remove('lane-left','lane-right','braking','hit');
 }
@@ -1943,16 +1951,32 @@ function evaluateObstacle(o){
     if(o.lane==='right'&&lane!=='right')success=true;
   }
   if(success){
-    game.score+=o.points;
+    game.combo++;
+    if(game.combo>game.maxCombo)game.maxCombo=game.combo;
+    const cs=document.getElementById('game-combo-stat');
+    if(game.combo>=2){cs.style.display='';document.getElementById('game-combo').textContent='x'+game.combo}
+    const comboBonus=game.combo>=3?Math.floor(game.combo/3)*10:0;
+    const gained=o.points+comboBonus;
+    game.score+=gained;
     document.getElementById('game-score').textContent=game.score;
-    showScorePopup('+'+o.points,o.el);
-    showGameToast(o.points>=40?'💯 PERFECT!':'✓ ปลอดภัย','success');
+    showScorePopup('+'+gained,o.el);
+    if(o.points>=40)game.perfectCount++;
+    if(game.combo>=3&&game.combo%3===0){
+      showGameToast('🔥 COMBO x'+game.combo+'! +'+comboBonus+' โบนัส','success');
+    }else{
+      showGameToast(o.points>=40?'💯 PERFECT!':'✓ ปลอดภัย','success');
+    }
   }else{
+    game.combo=0;
+    document.getElementById('game-combo-stat').style.display='none';
     game.health--;
     document.getElementById('game-health').textContent=game.health;
     const m=document.getElementById('motorcycle');
     m.classList.add('hit');
     setTimeout(()=>m.classList.remove('hit'),400);
+    // Track which kind of mistake for the safety lesson
+    const mk=o.requiredAction+'|'+o.type;
+    game.mistakes[mk]=(game.mistakes[mk]||0)+1;
     showGameToast('💥 พลาด! '+getReason(o),'error');
     if(game.health<=0)endGame();
   }
@@ -2005,19 +2029,46 @@ function setBrake(on){
   document.getElementById('motorcycle').classList.toggle('braking',on);
   document.getElementById('btn-brake').classList.toggle('pressed',on);
 }
+// Safety lessons keyed by the action the player failed
+const SAFETY_LESSONS={
+  'brake|pedestrian':'🚶 เมื่อเจอคนข้ามถนน ต้องชะลอและหยุดเสมอ — คนเดินเท้ามีสิทธิ์ก่อน การไม่หยุดให้คนข้ามเป็นสาเหตุการเสียชีวิตอันดับต้นๆ ของอุบัติเหตุในเมือง',
+  'brake|red-light':'🚦 ไฟแดงต้องหยุดทุกครั้ง แม้ถนนจะว่าง การฝ่าไฟแดงคือสาเหตุหลักของการชนในสี่แยก และเป็นความผิดตามกฎหมายจราจร',
+  'brake|slippery':'💧 ถนนเปียกหรือลื่น ต้องลดความเร็วและเบรกแต่เนิ่นๆ เพราะระยะเบรกบนถนนเปียกยาวขึ้น 2-3 เท่า การเบรกกะทันหันทำให้ลื่นล้ม',
+  'lane-right|car':'🚗 เมื่อมีรถจอด/ขวางในเลน ต้องเปลี่ยนเลนล่วงหน้า อย่ารอจนชิด ควรเว้นระยะห่างและเปิดไฟเลี้ยวก่อนเปลี่ยนเลนทุกครั้ง',
+  'lane-left|car':'🚗 เมื่อมีรถขวางในเลน ต้องหลบล่วงหน้าอย่างปลอดภัย มองกระจกและจุดบอดก่อนเปลี่ยนเลน เพื่อไม่ให้เฉี่ยวชนรถคันอื่น',
+  'lane-right|pothole':'🕳️ หลุมบ่อบนถนนอันตรายมากสำหรับมอเตอร์ไซค์ ต้องสังเกตและหลบล่วงหน้า การชนหลุมด้วยความเร็วทำให้เสียหลักล้มได้',
+  'lane-left|pothole':'🕳️ หลุมบ่อทำให้ล้อล็อกและเสียการควบคุม ควรมองถนนไกลๆ ล่วงหน้าเพื่อวางแผนหลบ ไม่ใช่หลบกะทันหัน',
+};
+function pickSafetyLesson(){
+  // Find the mistake the player made most often
+  let worst=null,max=0;
+  for(const k in game.mistakes){if(game.mistakes[k]>max){max=game.mistakes[k];worst=k}}
+  if(worst&&SAFETY_LESSONS[worst])return SAFETY_LESSONS[worst];
+  if(worst){
+    if(worst.startsWith('brake'))return'🛑 หลายครั้งที่ควรเบรกแต่ไม่เบรก — การชะลอความเร็วเมื่อเจอสิ่งกีดขวางหรือไฟแดงคือทักษะสำคัญที่สุดในการขับขี่ปลอดภัย';
+    return'↔️ การเปลี่ยนเลนหลบสิ่งกีดขวางต้องทำล่วงหน้าอย่างมีสติ มองกระจกและจุดบอดทุกครั้ง อย่าหักหลบกะทันหัน';
+  }
+  return'🏍️ ขับขี่ปลอดภัยคือการคาดการณ์ล่วงหน้า — มองไกล เว้นระยะ ลดความเร็วเมื่อไม่แน่ใจ และสวมหมวกกันน็อกทุกครั้ง';
+}
 async function endGame(){
   game.running=false;
   if(game.rafId)cancelAnimationFrame(game.rafId);
   game.obstacles.forEach(o=>o.el&&o.el.remove());
   game.obstacles=[];
   const survived=Math.floor((performance.now()-game.startTime)/1000);
-  const earned=Math.floor(game.score/5)+survived;
-  if(game.score>bestScore)bestScore=game.score;
+  const earned=Math.floor(game.score/5)+survived+game.maxCombo*2;
+  const isNewBest=game.score>bestScore;
+  if(isNewBest)bestScore=game.score;
   userPoints+=earned;
   await saveUser();
   document.getElementById('go-score').textContent=game.score;
   document.getElementById('go-points').textContent='+'+earned;
   document.getElementById('go-survived').textContent=survived+'s';
+  document.getElementById('go-best').textContent=bestScore;
+  const sub=document.getElementById('go-subtitle');
+  if(isNewBest)sub.textContent='🎉 สถิติใหม่! · Combo สูงสุด x'+game.maxCombo;
+  else sub.textContent='Combo สูงสุด x'+game.maxCombo+' · Perfect '+game.perfectCount+' ครั้ง';
+  document.getElementById('go-safety-text').textContent=pickSafetyLesson();
   document.getElementById('game-overlay').classList.add('show');
 }
 
@@ -2564,9 +2615,6 @@ function renderDashboard(){
       visual:reportVisual(r,110),
       ts:r.createdAt||0,
     });
-  });
-  Object.values(allReviews).flat().slice(-2).forEach(rv=>{
-    feedItems.push({icon:'⭐',cls:'review',title:`รีวิวใหม่ · ${rv.stars}⭐`,meta:String(rv.text||'').substring(0,40),visual:'',ts:0});
   });
   feedItems.sort((a,b)=>b.ts-a.ts);
   document.getElementById('dash-feed').innerHTML=feedItems.slice(0,10).map(f=>`
