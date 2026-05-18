@@ -1869,15 +1869,15 @@ function startGame(){
 function restartGame(){document.getElementById('game-overlay').classList.remove('show');startGame()}
 
 const OBSTACLE_TYPES=[
-  {type:'car',lane:'left',requiredAction:'lane-right',points:30},
-  {type:'car',lane:'right',requiredAction:'lane-left',points:30},
-  {type:'car',lane:'center',requiredAction:'lane-left-or-right',points:30},
-  {type:'pedestrian',lane:'both',requiredAction:'brake',points:50},
-  {type:'red-light',lane:'both',requiredAction:'brake',points:50},
-  {type:'green-light',lane:'both',requiredAction:'none',points:20},
-  {type:'pothole',lane:'left',requiredAction:'lane-right',points:25},
-  {type:'pothole',lane:'right',requiredAction:'lane-left',points:25},
-  {type:'slippery',lane:'both',requiredAction:'brake',points:40},
+  {type:'car',lane:'left',requiredAction:'lane-right',points:8},
+  {type:'car',lane:'right',requiredAction:'lane-left',points:8},
+  {type:'car',lane:'center',requiredAction:'lane-left-or-right',points:8},
+  {type:'pedestrian',lane:'both',requiredAction:'brake',points:12},
+  {type:'red-light',lane:'both',requiredAction:'brake',points:12},
+  {type:'green-light',lane:'both',requiredAction:'none',points:5},
+  {type:'pothole',lane:'left',requiredAction:'lane-right',points:6},
+  {type:'pothole',lane:'right',requiredAction:'lane-left',points:6},
+  {type:'slippery',lane:'both',requiredAction:'brake',points:10},
 ];
 function randCarColor(){return['#dc2626','#2563eb','#facc15','#10b981','#1f2937','#94a3b8'][Math.floor(Math.random()*6)]}
 
@@ -1934,7 +1934,7 @@ function gameLoop(now){
     if(o.y>game.canvasH+50){if(o.el)o.el.remove();game.obstacles.splice(i,1)}
   }
   if(Math.floor(elapsed*10)%10===0){
-    game.score=Math.max(game.score,Math.floor(elapsed*5));
+    game.score=Math.max(game.score,Math.floor(elapsed));
     document.getElementById('game-score').textContent=game.score;
   }
   game.rafId=requestAnimationFrame(gameLoop);
@@ -1957,16 +1957,16 @@ function evaluateObstacle(o){
     if(game.combo>game.maxCombo)game.maxCombo=game.combo;
     const cs=document.getElementById('game-combo-stat');
     if(game.combo>=2){cs.style.display='';document.getElementById('game-combo').textContent='x'+game.combo}
-    const comboBonus=game.combo>=3?Math.floor(game.combo/3)*10:0;
+    const comboBonus=game.combo>=5?Math.floor(game.combo/5)*3:0;
     const gained=o.points+comboBonus;
     game.score+=gained;
     document.getElementById('game-score').textContent=game.score;
     showScorePopup('+'+gained,o.el);
-    if(o.points>=40)game.perfectCount++;
-    if(game.combo>=3&&game.combo%3===0){
+    if(o.points>=10)game.perfectCount++;
+    if(game.combo>=5&&game.combo%5===0){
       showGameToast('🔥 COMBO x'+game.combo+'! +'+comboBonus+' โบนัส','success');
     }else{
-      showGameToast(o.points>=40?'💯 PERFECT!':'✓ ปลอดภัย','success');
+      showGameToast(o.points>=10?'💯 PERFECT!':'✓ ปลอดภัย','success');
     }
   }else{
     game.combo=0;
@@ -2058,7 +2058,7 @@ async function endGame(){
   game.obstacles.forEach(o=>o.el&&o.el.remove());
   game.obstacles=[];
   const survived=Math.floor((performance.now()-game.startTime)/1000);
-  const earned=Math.floor(game.score/5)+survived+game.maxCombo*2;
+  const earned=Math.floor(game.score/20)+Math.floor(survived/10)+Math.floor(game.maxCombo/3);
   const isNewBest=game.score>bestScore;
   if(isNewBest)bestScore=game.score;
   userPoints+=earned;
