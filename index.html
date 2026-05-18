@@ -1570,7 +1570,7 @@ function refreshHeatmap(){
   allReports.forEach(r=>{
     const col=r.risk>=8?'#dc2626':r.risk>=5?'#f97316':'#22c55e';
     const c=L.circleMarker([r.lat,r.lng],{radius:r.type==='accident'?9:7,fillColor:col,color:'#fff',weight:2.5,fillOpacity:0.95}).addTo(mainMap);
-    c.bindPopup(`<b>${r.type==='accident'?'🚨 อุบัติเหตุ':'⚠️ จุดเสี่ยง'}</b><br><b>${escapeHtml(r.category)}</b><br>ความเสี่ยง: ${r.risk}/10<br>${r.area?'พื้นที่: '+escapeHtml(r.area)+'<br>':''}${r.notes?escapeHtml(r.notes)+'<br>':''}${reportVisual(r,130)}<small>${r.date} ${r.time} · โดย ${escapeHtml(r.userName||'-')}</small>`,{maxWidth:230});
+    c.bindPopup(`<b>${r.type==='accident'?'🚨 อุบัติเหตุ':'⚠️ จุดเสี่ยง'}</b><br><b>${escapeHtml(r.category)}</b><br>ความเสี่ยง: ${r.risk}/10<br>${r.area?'พื้นที่: '+escapeHtml(r.area)+'<br>':''}${r.notes?escapeHtml(r.notes)+'<br>':''}${reportVisual(r,130)}<small>${fmtDate(r.date)} ${r.time} · โดย ${escapeHtml(r.userName||'-')}</small>`,{maxWidth:230});
     mainMap._markers.push(c);
   });
 }
@@ -1617,7 +1617,7 @@ function refreshDashMap(){
   allReports.forEach(r=>{
     const col=r.risk>=8?'#dc2626':r.risk>=5?'#f97316':'#22c55e';
     const c=L.circleMarker([r.lat,r.lng],{radius:r.type==='accident'?8:6,fillColor:col,color:'#fff',weight:2,fillOpacity:0.95}).addTo(dashMap);
-    c.bindPopup(`<b>${r.type==='accident'?'🚨':'⚠️'} ${escapeHtml(r.category)}</b><br>Risk ${r.risk}/10<br>${reportVisual(r,110)}<small>${r.date} ${r.time}</small>`,{maxWidth:210});
+    c.bindPopup(`<b>${r.type==='accident'?'🚨':'⚠️'} ${escapeHtml(r.category)}</b><br>Risk ${r.risk}/10<br>${reportVisual(r,110)}<small>${fmtDate(r.date)} ${r.time}</small>`,{maxWidth:210});
     dashMap._mk.push(c);
   });
 }
@@ -1633,7 +1633,7 @@ function renderNotifications(){
     <div class="notif-item"><div class="notif-title"><span>⚠️</span>สภาพถนนในเส้นทางประจำของคุณ</div><div class="notif-body">พบรายงานถนนชำรุดและลื่น <b>${damaged}</b> จุดในพื้นที่ของคุณ แนะนำให้ลดความเร็ว</div></div>
     <div class="notif-item"><div class="notif-title"><span>📊</span>ความเสี่ยงประจำสัปดาห์</div><div class="notif-body">ทางแยกพุทธมณฑลสาย 4 มี Risk Score เฉลี่ย <b>${avgRisk}/10</b></div></div>
     <div class="notif-item"><div class="notif-title"><span>📢</span>รายงานจาก MotoServer Crowdsourcing</div><div class="notif-body">มีอุบัติเหตุ <b>${accidents}</b> ครั้งในช่วง 30 วัน · เพิ่มขึ้น <b>${Math.min(40,accidents*5)}%</b></div></div>
-    ${recent.length?`<div class="notif-item" style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:10px;padding:10px;margin-top:8px;border:none;"><div class="notif-title"><span>🆕</span>รายงานล่าสุด</div><div class="notif-body">${recent.map(r=>`<div style="margin-top:3px;">• ${r.category} (Risk ${r.risk}/10) — ${r.date}</div>`).join('')}<div style="margin-top:6px;"><a onclick="navigate('reports-list')" style="color:var(--navy);font-weight:700;cursor:pointer;text-decoration:underline;">ดูทั้งหมด ›</a></div></div></div>`:''}
+    ${recent.length?`<div class="notif-item" style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:10px;padding:10px;margin-top:8px;border:none;"><div class="notif-title"><span>🆕</span>รายงานล่าสุด</div><div class="notif-body">${recent.map(r=>`<div style="margin-top:3px;">• ${r.category} (Risk ${r.risk}/10) — ${fmtDate(r.date)}</div>`).join('')}<div style="margin-top:6px;"><a onclick="navigate('reports-list')" style="color:var(--navy);font-weight:700;cursor:pointer;text-decoration:underline;">ดูทั้งหมด ›</a></div></div></div>`:''}
   `;
 }
 function renderReportsFeed(){
@@ -1650,7 +1650,7 @@ function renderReportsFeed(){
         <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${escapeHtml(r.category)}</div>
         ${reportVisual(r,170)}${r.photo?'<div style="font-size:9px;color:var(--green);font-weight:700;margin-bottom:4px;">📷 รูปจริงจากผู้รายงาน</div>':''}
         ${r.notes?`<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">${escapeHtml(r.notes)}</div>`:''}
-        <div style="font-size:10px;color:var(--muted);">📍 ${r.lat.toFixed(3)}, ${r.lng.toFixed(3)} · ⏰ ${r.time} · 📅 ${r.date}</div>
+        <div style="font-size:10px;color:var(--muted);">📍 ${r.lat.toFixed(3)}, ${r.lng.toFixed(3)} · ⏰ ${r.time} · 📅 ${fmtDate(r.date)}</div>
         ${r.area?`<div style="font-size:10px;color:var(--muted);">พื้นที่: ${escapeHtml(r.area)}</div>`:''}
         <div style="font-size:9px;color:var(--muted);margin-top:6px;">โดย: <b>${escapeHtml(r.userName||'-')}</b> ${r.source!=='seed'?'· <span style="color:var(--green);font-weight:700;">✓ MotoServer</span>':'· 📦 ตั้งต้น'}</div>
       </div>`;
@@ -2560,7 +2560,7 @@ function renderDashboard(){
       icon:r.type==='accident'?'🚨':'⚠️',
       cls:r.type==='accident'?'accident':'risk',
       title:r.category+(r.notes?' · '+r.notes:''),
-      meta:`${(r.userName||'-')} · ${r.lat.toFixed(2)},${r.lng.toFixed(2)} · ${r.time}`,
+      meta:`${(r.userName||'-')} · ${r.lat.toFixed(2)},${r.lng.toFixed(2)} · ${fmtDate(r.date)} ${r.time}`,
       visual:reportVisual(r,110),
       ts:r.createdAt||0,
     });
@@ -2668,6 +2668,13 @@ function toggleLang(){applyLang(currentLang==='th'?'en':'th')}
 function showHelp(){document.getElementById('help-modal').classList.add('show')}
 function confirmSignOut(){doSignOut()}
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+// Format an ISO date (YYYY-MM-DD) as day/month/year
+function fmtDate(d){
+  if(!d)return '';
+  const p=String(d).split('-');
+  if(p.length!==3)return String(d);
+  return p[2]+'/'+p[1]+'/'+p[0];
+}
 
 // Return the best photo for a report: the uploaded one, or a stock photo matching the category
 // Returns an HTML block for a report's visual.
