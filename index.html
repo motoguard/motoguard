@@ -1054,17 +1054,17 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
 
 <!-- HELP MODAL -->
 <div class="modal-backdrop" id="help-modal">
-  <div class="modal-card" style="text-align:left;">
-    <div class="modal-title" style="text-align:center;">📖 วิธีใช้ MotoGuard</div>
-    <div style="font-size:12px;color:var(--text);line-height:1.7;">
-      <p style="margin-bottom:10px;"><b style="color:var(--navy);">🔥 Heatmap</b><br>ดูจุดเสี่ยงและอุบัติเหตุบนแผนที่จริง</p>
-      <p style="margin-bottom:10px;"><b style="color:var(--navy);">＋ รายงาน</b><br>กดปุ่ม + กลางจอเพื่อแจ้งจุดเสี่ยง/อุบัติเหตุ</p>
-      <p style="margin-bottom:10px;"><b style="color:var(--navy);">🎮 เกม</b><br>เล่น Brake or Crash ฝึกตัดสินใจ และทำภารกิจ Safe Rider</p>
-      <p style="margin-bottom:10px;"><b style="color:var(--navy);">🍜 MotoGuide</b><br>รีวิวร้านอาหารใกล้ ม.มหิดล ศาลายา</p>
-      <p style="margin-bottom:10px;"><b style="color:var(--navy);">🎁 Rewards</b><br>แลกแต้มเป็นส่วนลดร้านอาหาร, อุปกรณ์ความปลอดภัย</p>
-      <p><b style="color:var(--navy);">📤 แชร์</b><br>ทุกเครื่องเชื่อมกับ MotoServer แบบเรียลไทม์</p>
+  <div class="modal-card" style="text-align:left;max-width:420px;padding:0;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,var(--navy),#1e3a5f);padding:16px 18px;color:#fff;">
+      <div style="font-size:17px;font-weight:800;">📖 คู่มือการใช้งาน MotoGuard</div>
+      <div style="font-size:11px;opacity:0.8;margin-top:2px;" id="help-page-label">หน้า 1 / 7</div>
     </div>
-    <button class="modal-btn primary" onclick="document.getElementById('help-modal').classList.remove('show')" style="width:100%;margin-top:14px;">เข้าใจแล้ว</button>
+    <div id="help-body" style="padding:18px;font-size:12.5px;color:var(--text);line-height:1.75;min-height:340px;max-height:50vh;overflow-y:auto;"></div>
+    <div style="display:flex;gap:8px;padding:14px 18px;border-top:1px solid #eee;align-items:center;">
+      <button class="modal-btn secondary" id="help-prev" onclick="helpNav(-1)" style="flex:0 0 auto;padding:10px 14px;">‹ ก่อน</button>
+      <div id="help-dots" style="flex:1;display:flex;gap:5px;justify-content:center;"></div>
+      <button class="modal-btn primary" id="help-next" onclick="helpNav(1)" style="flex:0 0 auto;padding:10px 14px;">ถัดไป ›</button>
+    </div>
   </div>
 </div>
 
@@ -2725,7 +2725,95 @@ function applyLang(lang){
 }
 function toggleLang(){applyLang(currentLang==='th'?'en':'th')}
 
-function showHelp(){document.getElementById('help-modal').classList.add('show')}
+const HELP_PAGES=[
+  {t:'👋 ยินดีต้อนรับสู่ MotoGuard',h:`
+    <p><b style="color:var(--navy);">MotoGuard</b> คือแอปความปลอดภัยสำหรับผู้ขับขี่มอเตอร์ไซค์ ช่วยให้คุณ:</p>
+    <p style="margin-top:8px;">🔥 ดูจุดเสี่ยง/อุบัติเหตุบนแผนที่จริง<br>
+    📢 รายงานอันตรายให้ผู้อื่นรู้<br>
+    🚨 รับแจ้งเตือนอุบัติเหตุแบบเรียลไทม์<br>
+    🎮 ฝึกทักษะขับขี่ผ่านเกมและภารกิจ<br>
+    🍜 ค้นร้านอาหารใกล้ ม.มหิดล ศาลายา<br>
+    🎁 สะสมแต้มแลกของรางวัล</p>
+    <p style="margin-top:10px;background:#fef3c7;padding:10px;border-radius:8px;font-size:11.5px;">💡 ทุกคนที่ใช้แอปเชื่อมต่อ <b>MotoServer</b> เดียวกัน — รายงานของคุณคนอื่นเห็นได้ทันที</p>`},
+  {t:'🏠 หน้าแรก & แผนที่จุดเสี่ยง',h:`
+    <p><b style="color:var(--navy);">แผนที่จุดเสี่ยง</b> แสดงรายงานทั้งหมดบนแผนที่จริง</p>
+    <p style="margin-top:8px;">🟢 <b>เขียว</b> = เสี่ยงต่ำ<br>
+    🟠 <b>ส้ม</b> = เสี่ยงปานกลาง<br>
+    🔴 <b>แดง</b> = อันตราย/อุบัติเหตุ (หมุดใหญ่กว่า)</p>
+    <p style="margin-top:10px;"><b>👆 แตะหมุด</b> เพื่อดูรายละเอียด: ประเภท, ความเสี่ยง, รูปภาพ, เวลา, ผู้รายงาน</p>
+    <p style="margin-top:8px;">ด้านบนมีสถิติของคุณ: ⭐ Moto Point, จำนวนรายงาน, วันต่อเนื่อง</p>
+    <p style="margin-top:10px;background:#dbeafe;padding:10px;border-radius:8px;font-size:11.5px;">📊 แตะ "รายงานทั้งหมด" ใน Settings เพื่อดูรายการแบบละเอียดพร้อมรูป</p>`},
+  {t:'➕ การรายงานจุดเสี่ยง/อุบัติเหตุ',h:`
+    <p><b style="color:var(--navy);">กดปุ่ม ＋ กลางแถบล่าง</b> เพื่อรายงาน</p>
+    <p style="margin-top:8px;"><b>ขั้นตอน:</b><br>
+    1️⃣ เลือก "แจ้งจุดเสี่ยง" หรือ "แจ้งอุบัติเหตุ"<br>
+    2️⃣ เลือกประเภทเหตุการณ์ (รถชน, หลุมบ่อ ฯลฯ)<br>
+    3️⃣ <b>แตะแผนที่</b> เลือกตำแหน่งที่เกิดเหตุ<br>
+    4️⃣ ปรับระดับความเสี่ยง 1-10<br>
+    5️⃣ <b>📷 แนบรูปภาพ (จำเป็น)</b> — ถ่ายหรือเลือกรูป<br>
+    6️⃣ ใส่เวลา + รายละเอียดเพิ่มเติม<br>
+    7️⃣ กด "ส่งรายงานไปยัง MotoServer"</p>
+    <p style="margin-top:10px;background:#fee2e2;padding:10px;border-radius:8px;font-size:11.5px;">⚠️ ต้องแนบรูปทุกครั้ง เพื่อให้ผู้อื่นเห็นภาพจริงและยืนยันเหตุการณ์ได้ · ได้ +25 แต้มต่อรายงาน</p>`},
+  {t:'🚨 ระบบแจ้งเตือนเรียลไทม์',h:`
+    <p>เมื่อมีคน <b style="color:#dc2626;">รายงานอุบัติเหตุ</b> ใหม่ ทุกเครื่องที่เปิดแอปอยู่จะ:</p>
+    <p style="margin-top:8px;">🔔 เด้งแถบแจ้งเตือนสีแดงด้านบน<br>
+    🔊 มีเสียงเตือน<br>
+    🖼️ แสดงรูปภาพที่ผู้รายงานแนบมา<br>
+    📍 บอกพิกัดและระยะความเสี่ยง</p>
+    <p style="margin-top:10px;">ช่วยให้คุณ <b>หลีกเลี่ยงเส้นทางอันตราย</b> ได้ทันก่อนถึงจุดเกิดเหตุ</p>
+    <p style="margin-top:10px;background:#dbeafe;padding:10px;border-radius:8px;font-size:11.5px;">💡 อนุญาตการแจ้งเตือนใน Settings เพื่อรับเตือนแม้ไม่ได้เปิดแอปค้างไว้</p>`},
+  {t:'🎮 เกม Brake or Crash',h:`
+    <p><b style="color:var(--navy);">เกมฝึกการตัดสินใจขับขี่</b> — ขับมอเตอร์ไซค์ หลบสิ่งกีดขวาง</p>
+    <p style="margin-top:8px;"><b>การควบคุม:</b><br>
+    ⬅️➡️ ปุ่มซ้าย/ขวา = เปลี่ยนเลน<br>
+    🛑 ปุ่มเบรก = ชะลอ/หยุด<br>
+    (คอมพิวเตอร์: ลูกศร หรือ A/D + Space)</p>
+    <p style="margin-top:8px;"><b>กติกา:</b><br>
+    🚗 รถ/หลุม → เปลี่ยนเลนหลบ<br>
+    🚶 คนข้าม / 🚦 ไฟแดง / 💧 ถนนลื่น → เบรก<br>
+    🟢 ไฟเขียว → ขับต่อได้</p>
+    <p style="margin-top:8px;">🔥 <b>Combo</b>: เล่นถูกต่อเนื่องได้โบนัส · พลาด combo รีเซ็ต<br>
+    🛡️ จบเกมมี <b>บทเรียนความปลอดภัย</b> ตามจุดที่คุณพลาดบ่อย</p>`},
+  {t:'🏆 Safe Rider League & Rewards',h:`
+    <p><b style="color:var(--navy);">Safe Rider League</b> — ภารกิจจริงเพื่อสะสมแต้ม:</p>
+    <p style="margin-top:8px;">🪖 ส่งภาพสวมหมวกกันน็อก<br>
+    ❓ ทำแบบทดสอบกฎจราจร<br>
+    🎓 ลงทะเบียนอบรมขับขี่<br>
+    🏍️ ตรวจวัดความเร็วด้วย GPS จริง<br>
+    📋 ตอบแบบประเมิน<br>
+    📍 รายงานจุดเสี่ยง 5 จุด</p>
+    <p style="margin-top:10px;"><b style="color:var(--navy);">🎁 Rewards</b> — นำ Moto Point ไปแลก:</p>
+    <p style="margin-top:6px;">ส่วนลดร้านอาหารพาร์ทเนอร์, คูปอง, อุปกรณ์ความปลอดภัย — ได้โค้ดไปใช้ที่ร้านจริง</p>`},
+  {t:'🍜 MotoGuide & ⚙️ ตั้งค่า',h:`
+    <p><b style="color:var(--navy);">🍜 MotoGuide</b> — ไกด์ร้านอาหาร 50 ร้านใกล้ ม.มหิดล ศาลายา</p>
+    <p style="margin-top:6px;">🔍 ค้นหา/กรองตามประเภท (ไทย, ญี่ปุ่น, คาเฟ่ ฯลฯ)<br>
+    ⭐ ดูคะแนน, ราคา, เวลาเปิด, ส่วนลดสมาชิก<br>
+    📝 เขียนรีวิวให้คะแนนได้</p>
+    <p style="margin-top:10px;"><b style="color:var(--navy);">⚙️ Settings</b></p>
+    <p style="margin-top:6px;">🌐 เปลี่ยนภาษา ไทย/English<br>
+    🔔 เปิดการแจ้งเตือน<br>
+    📊 เข้า MotoServer Dashboard ดูสถิติรวม<br>
+    🔐 เข้าสู่ระบบ — เก็บแต้ม/ภารกิจข้ามอุปกรณ์</p>
+    <p style="margin-top:10px;background:#d1fae5;padding:10px;border-radius:8px;font-size:11.5px;">✅ พร้อมแล้ว! เริ่มใช้ MotoGuard เพื่อการขับขี่ที่ปลอดภัยขึ้น 🛡️</p>`},
+];
+let helpPage=0;
+function renderHelpPage(){
+  const p=HELP_PAGES[helpPage];
+  document.getElementById('help-body').innerHTML=`<div style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:10px;">${p.t}</div>${p.h}`;
+  document.getElementById('help-page-label').textContent=`หน้า ${helpPage+1} / ${HELP_PAGES.length}`;
+  document.getElementById('help-prev').style.visibility=helpPage===0?'hidden':'visible';
+  const nb=document.getElementById('help-next');
+  nb.textContent=helpPage===HELP_PAGES.length-1?'เสร็จสิ้น ✓':'ถัดไป ›';
+  document.getElementById('help-dots').innerHTML=HELP_PAGES.map((_,i)=>
+    `<span style="width:7px;height:7px;border-radius:50%;background:${i===helpPage?'var(--navy)':'#cbd5e1'};display:inline-block;"></span>`).join('');
+  document.getElementById('help-body').scrollTop=0;
+}
+function helpNav(d){
+  if(d>0&&helpPage===HELP_PAGES.length-1){document.getElementById('help-modal').classList.remove('show');return}
+  helpPage=Math.max(0,Math.min(HELP_PAGES.length-1,helpPage+d));
+  renderHelpPage();
+}
+function showHelp(){helpPage=0;renderHelpPage();document.getElementById('help-modal').classList.add('show')}
 function confirmSignOut(){doSignOut()}
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 // Format an ISO date (YYYY-MM-DD) as day/month/year
