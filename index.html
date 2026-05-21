@@ -783,16 +783,6 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
       <label class="form-label" data-i18n="rf.type">🏷️ ประเภทเหตุการณ์</label>
       <select class="form-select" id="form-type">
         <option value="">-- เลือกประเภท --</option>
-        <option value="ถนนลื่น">💧 ถนนลื่น</option>
-        <option value="พื้นผิวชำรุด">🕳️ พื้นผิวชำรุด</option>
-        <option value="หลุมบ่อ">⚫ หลุมบ่อ</option>
-        <option value="สิ่งกีดขวาง">🚧 สิ่งกีดขวาง</option>
-        <option value="ไฟส่องสว่างชำรุด">💡 ไฟส่องสว่างชำรุด</option>
-        <option value="สัญญาณไฟเสีย">🚦 สัญญาณไฟเสีย</option>
-        <option value="ทางโค้งอันตราย">↪️ ทางโค้งอันตราย</option>
-        <option value="ทัศนวิสัยต่ำ">🌫️ ทัศนวิสัยต่ำ</option>
-        <option value="รถชน">💥 รถชนกัน</option>
-        <option value="รถล้ม">🏍️ รถจักรยานยนต์ล้ม</option>
       </select>
     </div>
     <div class="form-field">
@@ -1741,8 +1731,54 @@ function focusReport(id){
 }
 
 // ============ REPORT FORM ============
-function openReportForm(type){currentReportType=type;navigate('report-form')}
+// Category options per report type — only categories relevant to the chosen type appear
+const REPORT_CATEGORIES={
+  risk:[
+    {v:'ถนนลื่น',l:'💧 ถนนลื่น'},
+    {v:'พื้นผิวชำรุด',l:'🛣️ พื้นผิวชำรุด'},
+    {v:'หลุมบ่อ',l:'🕳️ หลุมบ่อ'},
+    {v:'ถนนเปียก',l:'☔ ถนนเปียก / น้ำท่วมขัง'},
+    {v:'เศษหินกรวด',l:'🪨 เศษหินกรวดบนถนน'},
+    {v:'น้ำมันหก',l:'🛢️ น้ำมันหก / คราบลื่น'},
+    {v:'สิ่งกีดขวาง',l:'🚧 สิ่งกีดขวาง'},
+    {v:'ไฟส่องสว่างชำรุด',l:'💡 ไฟส่องสว่างชำรุด'},
+    {v:'สัญญาณไฟเสีย',l:'🚦 สัญญาณไฟเสีย'},
+    {v:'ทางโค้งอันตราย',l:'↪️ ทางโค้งอันตราย'},
+    {v:'ทัศนวิสัยต่ำ',l:'🌫️ ทัศนวิสัยต่ำ / หมอกฝุ่น'},
+    {v:'สัตว์ข้ามถนน',l:'🐕 สัตว์ข้ามถนนบ่อย'},
+    {v:'ถนนแคบ',l:'↔️ ถนนแคบ / ช่องจราจรแคบ'},
+    {v:'ป้ายชำรุด',l:'🪧 ป้ายจราจรชำรุด/หาย'},
+    {v:'จุดมืด',l:'🌑 จุดมืด ทัศนวิสัยกลางคืนแย่'},
+    {v:'งานก่อสร้าง',l:'🚜 งานก่อสร้าง/ขุดถนน'},
+    {v:'รถจอดกีดขวาง',l:'🅿️ รถจอดกีดขวาง'},
+    {v:'อื่นๆ',l:'⚠️ อื่นๆ'},
+  ],
+  accident:[
+    {v:'รถจักรยานยนต์ล้ม',l:'🏍️ รถจักรยานยนต์ล้ม'},
+    {v:'รถชน',l:'💥 รถชนกัน'},
+    {v:'รถชนคน',l:'🚶 รถชนคนข้ามถนน'},
+    {v:'รถชนสัตว์',l:'🐕 รถชนสัตว์'},
+    {v:'รถเสียหลัก',l:'↩️ รถเสียหลัก/หมุน'},
+    {v:'รถตกถนน',l:'🛑 รถตกถนน/ตกร่อง'},
+    {v:'รถชนกำแพง',l:'🧱 รถชนกำแพง/เสา'},
+    {v:'รถชนท้าย',l:'🚗 รถชนท้าย'},
+    {v:'รถพลิกคว่ำ',l:'🔄 รถพลิกคว่ำ'},
+    {v:'รถไฟไหม้',l:'🔥 รถเกิดเพลิงไหม้'},
+    {v:'อุบัติเหตุจากฝน',l:'🌧️ อุบัติเหตุจากฝน/ถนนลื่น'},
+    {v:'อุบัติเหตุอื่นๆ',l:'🚨 อุบัติเหตุอื่นๆ'},
+  ],
+};
+
+function populateTypeOptions(){
+  const sel=document.getElementById('form-type');if(!sel)return;
+  const list=REPORT_CATEGORIES[currentReportType==='accident'?'accident':'risk'];
+  sel.innerHTML='<option value="">-- เลือกประเภท --</option>'+
+    list.map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
+}
+
+function openReportForm(type){currentReportType=type;populateTypeOptions();navigate('report-form')}
 function initFormDefaults(){
+  populateTypeOptions();
   document.getElementById('form-date').value=new Date().toISOString().split('T')[0];
   const now=new Date();
   document.getElementById('form-time').value=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
