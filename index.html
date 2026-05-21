@@ -21,10 +21,10 @@
   --bg:#f0f3f8;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html,body{font-family:'Prompt',system-ui,sans-serif;background:linear-gradient(135deg,#cbd5e1 0%,#94a3b8 100%);min-height:100vh;color:var(--text);-webkit-font-smoothing:antialiased;height:100vh;overflow:hidden}
+html,body{margin:0;padding:0;font-family:'Prompt',system-ui,sans-serif;background:linear-gradient(135deg,#cbd5e1 0%,#94a3b8 100%);color:var(--text);-webkit-font-smoothing:antialiased;height:100vh;height:100dvh;overflow:hidden}
 body{display:flex;align-items:center;justify-content:center}
-.app-frame{aspect-ratio:9/19.5;height:100vh;width:auto;max-width:100vw;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 30px 80px rgba(0,0,0,0.3)}
-@media(min-width:500px){body{padding:16px}.app-frame{border-radius:36px;box-shadow:0 30px 80px rgba(0,0,0,0.3),0 0 0 8px #1a1a1a;height:96vh}}
+.app-frame{aspect-ratio:9/19.5;height:100vh;height:100dvh;width:auto;max-width:100vw;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 30px 80px rgba(0,0,0,0.3)}
+@media(min-width:500px){body{padding:16px;box-sizing:border-box}.app-frame{border-radius:36px;box-shadow:0 30px 80px rgba(0,0,0,0.3),0 0 0 8px #1a1a1a;height:96vh;height:96dvh}}
 
 /* Header */
 .app-header{background:linear-gradient(135deg,var(--navy-deep) 0%,var(--navy) 60%,var(--navy-light) 100%);color:#fff;padding:16px 18px 12px;flex-shrink:0;position:relative;z-index:20}
@@ -552,8 +552,8 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="font-size:24px;">💡</div>
         <div style="flex:1;">
-          <div style="font-size:12.5px;font-weight:700;color:#78350f;">โหมด Demo · ใช้งานชั่วคราว</div>
-          <div style="font-size:11px;color:#92400e;margin-top:2px;">เข้าสู่ระบบเพื่อเก็บแต้มและภารกิจไว้ข้ามอุปกรณ์</div>
+          <div style="font-size:13px;font-weight:700;color:#78350f;">ยังไม่ได้เข้าสู่ระบบ</div>
+          <div style="font-size:11px;color:#92400e;margin-top:2px;">แตะเพื่อล็อกอิน</div>
         </div>
         <div style="font-size:18px;color:#92400e;">›</div>
       </div>
@@ -2694,7 +2694,7 @@ const I18N={
     'hero.greeting':'สวัสดี 👋',
     'hero.points':'⭐ Moto Point','hero.reports':'รายงานของคุณ','hero.streak':'วันต่อเนื่อง',
     'home.maptitle':'🔥 แผนที่จุดเสี่ยง','home.mapsub':'ประเทศไทย',
-    'demo.title':'โหมด Demo · ใช้งานชั่วคราว','demo.sub':'เข้าสู่ระบบเพื่อเก็บแต้มและภารกิจไว้ข้ามอุปกรณ์',
+    'demo.title':'ยังไม่ได้เข้าสู่ระบบ','demo.sub':'แตะเพื่อล็อกอิน',
     'games.title':'🎮 GAMES ZONE',
     'games.leaguedesc':'ทำภารกิจปลอดภัยในชีวิตจริง สะสมคะแนนแลกของรางวัล',
     'games.missiondone':'ภารกิจที่ทำสำเร็จ',
@@ -2723,7 +2723,7 @@ const I18N={
     'hero.greeting':'Hello 👋',
     'hero.points':'⭐ Moto Point','hero.reports':'Your Reports','hero.streak':'Day Streak',
     'home.maptitle':'🔥 Risk Zone Map','home.mapsub':'Thailand',
-    'demo.title':'Demo Mode · Temporary','demo.sub':'Sign in to save points & missions across devices',
+    'demo.title':'Not signed in','demo.sub':'Tap to log in',
     'games.title':'🎮 GAMES ZONE',
     'games.leaguedesc':'Complete real-life safety missions, earn points for rewards',
     'games.missiondone':'Missions Completed',
