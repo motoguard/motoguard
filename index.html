@@ -23,8 +23,8 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html,body{margin:0;padding:0;font-family:'Prompt',system-ui,sans-serif;background:linear-gradient(135deg,#cbd5e1 0%,#94a3b8 100%);color:var(--text);-webkit-font-smoothing:antialiased;height:100vh;height:100dvh;overflow:hidden}
 body{display:flex;align-items:center;justify-content:center}
-.app-frame{aspect-ratio:9/19.5;height:100vh;height:100dvh;width:auto;max-width:100vw;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 30px 80px rgba(0,0,0,0.3)}
-@media(min-width:500px){body{padding:16px;box-sizing:border-box}.app-frame{border-radius:36px;box-shadow:0 30px 80px rgba(0,0,0,0.3),0 0 0 8px #1a1a1a;height:96vh;height:96dvh}}
+.app-frame{width:100%;height:100vh;height:100dvh;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;position:relative}
+@media(min-width:500px){body{padding:16px;box-sizing:border-box}.app-frame{aspect-ratio:9/19.5;width:auto;max-width:100vw;height:96vh;height:96dvh;border-radius:36px;box-shadow:0 30px 80px rgba(0,0,0,0.3),0 0 0 8px #1a1a1a}}
 
 /* Header */
 .app-header{background:linear-gradient(135deg,var(--navy-deep) 0%,var(--navy) 60%,var(--navy-light) 100%);color:#fff;padding:16px 18px 12px;flex-shrink:0;position:relative;z-index:20}
@@ -816,12 +816,18 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
     </div>
     <div class="form-field">
       <label class="form-label"><span data-i18n="rf.photo">📷 รูปภาพประกอบ</span> <span class="en" style="color:#dc2626;" data-i18n="rf.photoreq">* จำเป็นต้องแนบ</span></label>
-      <label class="photo-upload" for="form-photo">
-        <span class="photo-upload-icon" id="photo-icon">📷</span>
-        <span class="photo-upload-text" id="photo-text">แตะเพื่อถ่ายภาพ / เลือกรูป (จำเป็น)</span>
-        <img id="photo-preview" style="display:none;">
-        <input type="file" accept="image/*" capture="environment" id="form-photo">
-      </label>
+      <!-- Preview slot — visible only after a photo is chosen -->
+      <div id="photo-preview-wrap" style="display:none;border-radius:12px;overflow:hidden;margin-bottom:8px;position:relative;">
+        <img id="photo-preview" style="display:block;width:100%;max-height:200px;object-fit:cover;">
+        <button type="button" onclick="clearPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(15,23,42,0.8);color:#fff;border:none;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;">✕</button>
+      </div>
+      <!-- Single trigger — opens an action sheet -->
+      <div id="photo-choices" class="photo-upload" onclick="openPhotoSheet()">
+        <span class="photo-upload-icon">📷</span>
+        <span class="photo-upload-text" data-i18n="rf.photopick">แตะเพื่อแนบรูป (จำเป็น)</span>
+      </div>
+      <input type="file" accept="image/*" capture="environment" id="form-photo-camera" style="display:none;">
+      <input type="file" accept="image/*" id="form-photo-library" style="display:none;">
     </div>
     <div class="form-field">
       <label class="form-label" data-i18n="rf.time">⏰ เวลาที่พบ</label>
@@ -1049,6 +1055,26 @@ input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webki
     </div>
   </div>
 </div>
+
+<!-- PHOTO SOURCE ACTION SHEET -->
+<div id="photo-sheet" onclick="if(event.target===this)closePhotoSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);">
+  <div style="width:100%;max-width:420px;background:#fff;border-radius:18px 18px 0 0;padding:18px 18px 24px;animation:sheetUp 0.22s ease-out;">
+    <div style="width:36px;height:4px;background:#cbd5e1;border-radius:2px;margin:0 auto 14px;"></div>
+    <div style="font-size:14px;font-weight:800;text-align:center;color:var(--navy);margin-bottom:14px;" data-i18n="rf.photopicktitle">เลือกวิธีแนบรูป</div>
+    <button type="button" onclick="pickPhotoSource('camera')" style="display:flex;align-items:center;gap:14px;width:100%;background:var(--bg);border:none;padding:14px 16px;border-radius:12px;margin-bottom:8px;cursor:pointer;font-family:inherit;text-align:left;">
+      <span style="font-size:26px;">📷</span>
+      <span style="flex:1;font-weight:700;font-size:14px;color:var(--text);" data-i18n="rf.takephoto">ถ่ายรูป</span>
+      <span style="color:var(--muted);">›</span>
+    </button>
+    <button type="button" onclick="pickPhotoSource('library')" style="display:flex;align-items:center;gap:14px;width:100%;background:var(--bg);border:none;padding:14px 16px;border-radius:12px;margin-bottom:14px;cursor:pointer;font-family:inherit;text-align:left;">
+      <span style="font-size:26px;">🖼️</span>
+      <span style="flex:1;font-weight:700;font-size:14px;color:var(--text);" data-i18n="rf.fromlibrary">เลือกจากคลังรูป</span>
+      <span style="color:var(--muted);">›</span>
+    </button>
+    <button type="button" onclick="closePhotoSheet()" style="width:100%;background:#fff;border:1.5px solid var(--border);color:var(--muted);padding:12px;border-radius:12px;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;" data-i18n="rf.cancel">ยกเลิก</button>
+  </div>
+</div>
+<style>@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}</style>
 
 <!-- MISSION MODAL — interactive missions -->
 <div class="modal-backdrop" id="mission-modal">
@@ -1727,11 +1753,10 @@ function initFormDefaults(){
   updateRisk();
   pickedLocation=null;
   document.getElementById('loc-coords').textContent='แตะแผนที่เพื่อเลือกตำแหน่ง';
-  document.getElementById('photo-preview').style.display='none';
-  document.getElementById('photo-icon').style.display='';
-  document.getElementById('photo-text').style.display='';
+  const ppw=document.getElementById('photo-preview-wrap');if(ppw)ppw.style.display='none';
+  const pc=document.getElementById('photo-choices');if(pc)pc.style.display='';
   pendingPhoto=null;rawPhotoDataUrl=null;photoCompressing=false;
-  const fp=document.getElementById('form-photo');if(fp)fp.value='';
+  ['form-photo-camera','form-photo-library'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
 }
 function updateRisk(){document.getElementById('risk-level-value').textContent=document.getElementById('risk-level').value+' / 10'}
 function selectVerify(el){document.querySelectorAll('.verify-option').forEach(o=>o.classList.remove('selected'));el.classList.add('selected')}
@@ -1741,15 +1766,15 @@ let rawPhotoDataUrl=null;  // raw uploaded image (compressed lazily on submit if
 let photoCompressing=false;
 
 document.addEventListener('change',e=>{
-  if(e.target&&e.target.id==='form-photo'){
+  if(e.target&&(e.target.id==='form-photo-camera'||e.target.id==='form-photo-library')){
     const f=e.target.files[0];if(!f)return;
     const r=new FileReader();
     r.onload=ev=>{
       rawPhotoDataUrl=ev.target.result;
       const img=document.getElementById('photo-preview');
-      img.src=ev.target.result;img.style.display='block';
-      document.getElementById('photo-icon').style.display='none';
-      document.getElementById('photo-text').style.display='none';
+      img.src=ev.target.result;
+      document.getElementById('photo-preview-wrap').style.display='block';
+      document.getElementById('photo-choices').style.display='none';
       // Start compressing in background
       photoCompressing=true;
       compressImage(ev.target.result,(compressed)=>{pendingPhoto=compressed;photoCompressing=false});
@@ -1757,6 +1782,26 @@ document.addEventListener('change',e=>{
     r.readAsDataURL(f);
   }
 });
+
+function clearPhoto(){
+  pendingPhoto=null;rawPhotoDataUrl=null;photoCompressing=false;
+  document.getElementById('photo-preview-wrap').style.display='none';
+  document.getElementById('photo-choices').style.display='';
+  ['form-photo-camera','form-photo-library'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+}
+
+// Action-sheet style picker — opens after the user taps the photo area
+function openPhotoSheet(){
+  document.getElementById('photo-sheet').style.display='flex';
+}
+function closePhotoSheet(){
+  document.getElementById('photo-sheet').style.display='none';
+}
+function pickPhotoSource(src){
+  closePhotoSheet();
+  const id=src==='camera'?'form-photo-camera':'form-photo-library';
+  const el=document.getElementById(id);if(el)el.click();
+}
 
 // Resize + compress image to keep it small enough to store/sync
 function compressImage(dataUrl,cb){
@@ -2714,7 +2759,7 @@ const I18N={
     'rf.risk':'📊 ระดับความเสี่ยง','rf.area':'📍 พื้นที่ที่ได้รับผลกระทบ','rf.photo':'📷 รูปภาพประกอบ',
     'rf.time':'⏰ เวลาที่พบ','rf.notes':'📝 รายละเอียดเพิ่มเติม','rf.verify':'✅ การยืนยัน',
     'rf.areaph':'เช่น เลนซ้าย, ทางแยก','rf.notesph':'คำอธิบายเหตุการณ์เพิ่มเติม...',
-    'rf.photoreq':'* จำเป็นต้องแนบ',
+    'rf.photoreq':'* จำเป็นต้องแนบ','rf.takephoto':'ถ่ายรูป','rf.fromlibrary':'เลือกจากคลังรูป','rf.photopick':'แตะเพื่อแนบรูป (จำเป็น)','rf.photopicktitle':'เลือกวิธีแนบรูป','rf.cancel':'ยกเลิก',
     'game.bc':'เกมเรียลไทม์ — ขับมอเตอร์ไซค์ หลบรถ เบรกที่ไฟแดง สะสมคะแนน',
     'opt.risk':'แจ้งจุดเสี่ยง','opt.accident':'แจ้งอุบัติเหตุ',
   },
@@ -2743,7 +2788,7 @@ const I18N={
     'rf.risk':'📊 Risk Level','rf.area':'📍 Affected Area','rf.photo':'📷 Photo Evidence',
     'rf.time':'⏰ Time Observed','rf.notes':'📝 Additional Notes','rf.verify':'✅ Verification',
     'rf.areaph':'e.g. left lane, junction','rf.notesph':'Describe the situation in more detail...',
-    'rf.photoreq':'* Required',
+    'rf.photoreq':'* Required','rf.takephoto':'Take Photo','rf.fromlibrary':'Choose from Library','rf.photopick':'Tap to attach a photo (required)','rf.photopicktitle':'Add a photo','rf.cancel':'Cancel',
     'game.bc':'Real-time game — ride a motorcycle, dodge cars, brake at red lights, earn points',
     'opt.risk':'Report Risk Zone','opt.accident':'Report Accident',
   },
